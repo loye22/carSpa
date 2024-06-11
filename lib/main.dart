@@ -1,6 +1,7 @@
 import 'package:car_spa/pages/loginPage.dart';
 import 'package:car_spa/pages/rootPage.dart';
 import 'package:car_spa/widgets/calender.dart';
+import 'package:car_spa/widgets/staticVar.dart';
 import 'package:car_spa/widgets/testScedualcondfigration.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
@@ -37,24 +38,16 @@ class MyApp extends StatelessWidget {
       DeviceOrientation.portraitDown,
     ]);
     return MaterialApp(
+      theme: ThemeData(
+        //scaffoldBackgroundColor: Color(0xFF2c3e50), // Sidebar background color
+        textTheme: TextTheme(
+          bodyText1: TextStyle(color: Color(0xFF2C3E50)), // Text color for body
+          bodyText2: TextStyle(color: Color(0xFF2C3E50)), // Text color for body
+          // You can define additional text styles here as needed
+        ),
+      ),
       title: "Car SPA",
-      // theme: ThemeData(
-      //   useMaterial3: true,
-      //   colorScheme: ColorScheme.fromSeed(seedColor: Colors.blue),
-      // ),
-      // darkTheme: ThemeData(
-      //   useMaterial3: true,
-      //   colorScheme: ColorScheme.fromSeed(
-      //     seedColor: Colors.blue,
-      //     brightness: Brightness.dark,
-      //   ),
-      // ),
-
-
-
-
-      debugShowCheckedModeBanner: false,
-      //theme: ThemeData(fontFamily: 'louie' , focusColor: Color.fromRGBO(20, 53, 96,1  )),
+       debugShowCheckedModeBanner: false,
       home: StreamBuilder(
         stream: FirebaseAuth.instance.authStateChanges(),
         builder: (BuildContext context, AsyncSnapshot<dynamic> snapshot)  {

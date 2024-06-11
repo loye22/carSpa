@@ -1,13 +1,10 @@
 import 'dart:io';
 
 import 'package:car_spa/widgets/dialog.dart';
+
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:kalender/kalender.dart';
-
-
-
-
 
 class calenderView extends StatefulWidget {
   const calenderView({super.key});
@@ -24,7 +21,7 @@ class _calenderViewState extends State<calenderView> {
     ),
   );
   final CalendarEventsController<Event> eventController =
-  CalendarEventsController<Event>();
+      CalendarEventsController<Event>();
 
   late ViewConfiguration currentConfiguration = viewConfigurations[0];
   List<ViewConfiguration> viewConfigurations = [
@@ -33,121 +30,169 @@ class _calenderViewState extends State<calenderView> {
       numberOfDays: 1,
       startHour: 6,
       endHour: 24,
-      createEvents: false ,
+      createEvents: false,
     ),
-    WeekConfiguration(startHour: 6,
+    WeekConfiguration(
+      startHour: 6,
       endHour: 24,
-      createEvents: false ,),
+      createEvents: false,
+    ),
     MonthConfiguration(),
     MultiWeekConfiguration(
-      numberOfWeeks: 3,startHour: 6,
+      numberOfWeeks: 3,
+      startHour: 6,
       endHour: 24,
-      createEvents: false ,
+      createEvents: false,
     ),
-    ScheduleConfiguration(
-      showHeader: true
-
-    )
+    ScheduleConfiguration(showHeader: true)
   ];
-
 
   @override
   void initState() {
     super.initState();
     DateTime now = DateTime.now();
     eventController.addEvents(
-
         [
+          // Day 1
+          CalendarEvent(
+            modifiable: false,
+            dateTimeRange: DateTimeRange(
+              start: DateTime.now(),
+              end: DateTime.now().add(const Duration(hours: 1)),
+            ),
+            eventData: Event(
+              title: 'Event 1',
+              color: Color(0xFF2ECC71),
+              description: 'Dummy description for Event 1',
+            ),
+          ),
+          CalendarEvent(
+            modifiable: false,
+            dateTimeRange: DateTimeRange(
+              start: DateTime.now().add(const Duration(minutes: 30)),
+              end: DateTime.now().add(const Duration(hours: 2)),
+            ),
+            eventData: Event(
+              title: 'Event 2',
+              color:  Color(0xFF3498DB),
+              description: 'Dummy description for Event 2',
+            ),
+          ),
+          CalendarEvent(
+            modifiable: false,
+            dateTimeRange: DateTimeRange(
+              start: DateTime.now().add(const Duration(hours: 1, minutes: 30)),
+              end: DateTime.now().add(const Duration(hours: 3)),
+            ),
+            eventData: Event(
+              title: 'Event 3',
+              color:Color(0xFFE74C3C),
+              description: 'Dummy description for Event 3',
+            ),
+          ),
+          CalendarEvent(
+            modifiable: false,
+            dateTimeRange: DateTimeRange(
+              start: DateTime.now().add(const Duration(hours: 1, minutes: 45)),
+              end: DateTime.now().add(const Duration(hours: 3, minutes: 30)),
+            ),
+            eventData: Event(
+              title: 'Event 4',
+              color: Color(0xFFF4D03F),
+              description: 'Dummy description for Event 4',
+            ),
+          ),
+          // Day 2
+          CalendarEvent(
+            modifiable: false,
+            dateTimeRange: DateTimeRange(
+              start: DateTime.now().add(const Duration(days: 1)),
+              end: DateTime.now().add(const Duration(days: 1, hours: 1)),
+            ),
+            eventData: Event(
+              title: 'Event 5',
+              color: Color(0xFF2ECC71),
+              description: 'Dummy description for Event 5',
+            ),
+          ),
+          CalendarEvent(
+            modifiable: false,
+            dateTimeRange: DateTimeRange(
+              start: DateTime.now().add(const Duration(days: 1, minutes: 30)),
+              end: DateTime.now().add(const Duration(days: 1, hours: 2)),
+            ),
+            eventData: Event(
+              title: 'Event 6',
+              color:  Color(0xFF3498DB),
+              description: 'Dummy description for Event 6',
+            ),
+          ),
+          // Add more events for Day 2 here
 
 
-      CalendarEvent(
-        modifiable: false,
-        dateTimeRange: DateTimeRange(
-          start: now,
-          end: now.add(const Duration(hours: 1)),
-        ),
-        eventData: Event(title: 'Event 1', color: Colors.blue),
-      ),
-      CalendarEvent(
-        modifiable: false,
-        dateTimeRange: DateTimeRange(
-          start: now.add(const Duration(minutes: 30)),
-          end: now.add(const Duration(hours: 2)),
-        ),
-        eventData: Event(title: 'Event 2', color: Colors.red),
-      ),
-      CalendarEvent(
-        modifiable: false,
-        dateTimeRange: DateTimeRange(
-          start: now.add(const Duration(hours: 1, minutes: 30)),
-          end: now.add(const Duration(hours: 3)),
-        ),
-        eventData: Event(title: 'Event 3', color: Colors.green),
-      ),
-      CalendarEvent(
-        modifiable: false,
-        dateTimeRange: DateTimeRange(
-          start: now.add(const Duration(hours: 1, minutes: 45)),
-          end: now.add(const Duration(hours: 3, minutes: 30)),
-        ),
-        eventData: Event(title: 'Event 4', color: Colors.yellow),
-      ),
-      CalendarEvent(
-        modifiable: false,
-        dateTimeRange: DateTimeRange(
-          start: now.add(const Duration(hours: 2)),
-          end: now.add(const Duration(hours: 4)),
-        ),
-        eventData: Event(title: 'Event 5', color: Colors.purple),
-      ),
-      CalendarEvent(
-        modifiable: false,
-        dateTimeRange: DateTimeRange(
-          start: now.add(const Duration(hours: 2)),
-          end: now.add(const Duration(hours: 3)),
-        ),
-        eventData: Event(title: 'Event 6', color: Colors.orange),
-      ),
-      CalendarEvent(
-        modifiable: false,
-        dateTimeRange: DateTimeRange(
-          start: now.add(const Duration(hours: 3, minutes: 30)),
-          end: now.add(const Duration(hours: 4, minutes: 30)),
-        ),
-        eventData: Event(title: 'Event 7', color: Colors.teal),
-      ),
-      CalendarEvent(
-        modifiable: false,
-        dateTimeRange: DateTimeRange(
-          start: now.add(const Duration(hours: 4)),
-          end: now.add(const Duration(hours: 5)),
-        ),
-        eventData: Event(title: 'Event 8', color: Colors.brown),
-      ),
-      CalendarEvent(
-        modifiable: false,
-        dateTimeRange: DateTimeRange(
-          start: now.add(const Duration(hours: 4)),
-          end: now.add(const Duration(hours: 6)),
-        ),
-        eventData: Event(title: 'Event 9', color: Colors.cyan),
-      ),
-      CalendarEvent(
-        modifiable: false,
-        dateTimeRange: DateTimeRange(
-          start: now.add(const Duration(hours: 5)),
-          end: now.add(const Duration(hours: 7)),
-        ),
-        eventData: Event(title: 'Event 10', color: Colors.indigo),
-      ),
+          // Day 1
+          CalendarEvent(
+            modifiable: false,
+            dateTimeRange: DateTimeRange(
+              start: DateTime.now(),
+              end: DateTime.now().add(const Duration(hours: 1 , days: 5)),
+            ),
+            eventData: Event(
+              title: 'Event 1',
+              color: Color(0xFF2ECC71),
+              description: 'Dummy description for Event 1',
+            ),
+          ),
+          CalendarEvent(
+            modifiable: false,
+            dateTimeRange: DateTimeRange(
+              start: DateTime.now().add(const Duration(minutes: 30, days: 5)),
+              end: DateTime.now().add(const Duration(hours: 2, days: 5)),
+            ),
+            eventData: Event(
+              title: 'Event 2',
+              color:  Color(0xFF3498DB),
+              description: 'Dummy description for Event 2',
+            ),
+          ),
+          CalendarEvent(
+            modifiable: false,
+            dateTimeRange: DateTimeRange(
+              start: DateTime.now().add(const Duration(hours: 1, minutes: 30, days: 5)),
+              end: DateTime.now().add(const Duration(hours: 3, days: 5)),
+            ),
+            eventData: Event(
+              title: 'Event 3',
+              color:Color(0xFFE74C3C),
+              description: 'Dummy description for Event 3',
+            ),
+          ),
+          CalendarEvent(
+            modifiable: false,
+            dateTimeRange: DateTimeRange(
+              start: DateTime.now().add(const Duration(hours: 1, minutes: 45, days: 5)),
+              end: DateTime.now().add(const Duration(hours: 3, minutes: 30, days: 5)),
+            ),
+            eventData: Event(
+              title: 'Event 4',
+              color: Color(0xFFF4D03F),
+              description: 'Dummy description for Event 4',
+            ),
+          ),
 
-    ]);
+          // Continue for Day 3, Day 4, etc.
+        ]
+    );
   }
 
   @override
   Widget build(BuildContext context) {
     final calendar = CalendarView<Event>(
-      style: CalendarStyle(backgroundColor: Colors.black),
+      style: CalendarStyle(
+          backgroundColor: Colors.black,
+          calendarHeaderBackgroundStyle: CalendarHeaderBackgroundStyle(
+              headerBackgroundColor: Colors.white)
+      ),
       controller: controller,
       eventsController: eventController,
       viewConfiguration: currentConfiguration,
@@ -160,7 +205,6 @@ class _calenderViewState extends State<calenderView> {
       eventHandlers: CalendarEventHandlers(
         onEventTapped: _onEventTapped,
         onEventChanged: _onEventChanged,
-
       ),
     );
 
@@ -171,18 +215,23 @@ class _calenderViewState extends State<calenderView> {
     );
   }
 
-
-  Future<void> _onEventTapped(CalendarEvent<Event> event,) async {
+  Future<void> _onEventTapped(
+    CalendarEvent<Event> event,
+  ) async {
     print(event.eventData!.title.toString());
   }
 
-  Future<void> _onEventChanged(DateTimeRange initialDateTimeRange,
-      CalendarEvent<Event> event,) async {
+  Future<void> _onEventChanged(
+    DateTimeRange initialDateTimeRange,
+    CalendarEvent<Event> event,
+  ) async {
     MyDialog.showAlert(context, "Ok", event.eventData!.title.toString());
   }
 
-  Widget _tileBuilder(CalendarEvent<Event> event,
-      TileConfiguration configuration,) {
+  Widget _tileBuilder(
+    CalendarEvent<Event> event,
+    TileConfiguration configuration,
+  ) {
     final color = event.eventData?.color ?? Colors.blue;
     return Card(
       shape: RoundedRectangleBorder(
@@ -201,8 +250,10 @@ class _calenderViewState extends State<calenderView> {
     );
   }
 
-  Widget _multiDayTileBuilder(CalendarEvent<Event> event,
-      MultiDayTileConfiguration configuration,) {
+  Widget _multiDayTileBuilder(
+    CalendarEvent<Event> event,
+    MultiDayTileConfiguration configuration,
+  ) {
     final color = event.eventData?.color ?? Colors.blue;
     return Card(
       margin: const EdgeInsets.symmetric(vertical: 2),
@@ -256,12 +307,25 @@ class _calenderViewState extends State<calenderView> {
                   ),
                 ),
               ),
+            if (event.eventData?.title != null)
+              Expanded(
+                child: Padding(
+                  padding: const EdgeInsets.only(left: 8.0),
+                  child: Text(
+                    event.eventData!.description!,
+                    style: TextStyle(
+                      color: Colors.white.withOpacity(0.8),
+                      fontSize: 14,
+                    ),
+                  ),
+                ),
+              ),
+
           ],
         ),
       ),
     );
   }
-
 
   Widget _calendarHeader(DateTimeRange dateTimeRange) {
     return Row(
@@ -298,11 +362,11 @@ class _calenderViewState extends State<calenderView> {
 }
 
 class Event {
-  Event({
-    required this.title,
-    this.description,
-    this.color,
-  });
+  Event(
+      {required this.title,
+      this.description="xxx",
+      this.color = Colors.black,
+      });
 
   /// The title of the [Event].
   final String title;
@@ -312,4 +376,9 @@ class Event {
 
   /// The color of the [Event] tile.
   final Color? color;
+
+  // /// this is the discritpoipmn
+  // final String? subTitle;
+  //
+  // final String? url;
 }

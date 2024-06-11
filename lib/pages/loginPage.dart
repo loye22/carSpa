@@ -39,7 +39,7 @@ class _loginPageState extends State<loginPage> {
             height: double.infinity,
             decoration: BoxDecoration(
               image: DecorationImage(
-                  image: AssetImage("assets/wall.png"), fit: BoxFit.cover),
+                  image: AssetImage("assets/wall2.jpeg"), fit: BoxFit.cover),
             ),
           ),
           Animate(
@@ -55,8 +55,8 @@ class _loginPageState extends State<loginPage> {
                     height: spacer,
                   ), //Namdhinggo
                   Text(
-                    "Login to car spa",
-                    style: TextStyle( fontSize:  32 , fontWeight: FontWeight.w400 , color: Colors.white),
+                    "Login",
+                    style: TextStyle( fontSize:  32 , fontWeight: FontWeight.w400 , color: Colors.black),
                   ),
                   SizedBox(
                     height: spacer,
@@ -66,7 +66,7 @@ class _loginPageState extends State<loginPage> {
                     height: size.height * 0.4,
                     decoration: BoxDecoration(
                       borderRadius: BorderRadius.circular(30),
-                      color: Color(0xFF461378).withOpacity(0.5),
+                      color:Colors.black.withOpacity(0.5),
                       //color: Color.fromRGBO(232, 240, 254, 1.0), // Background color
                     ),
                     padding: EdgeInsets.all(16.0),
@@ -128,7 +128,7 @@ class _loginPageState extends State<loginPage> {
                                   width: 90,
                                   height: 50,
                                   decoration: BoxDecoration(
-                                    color:Color(0xFF461378), //Color.fromRGBO(33, 103, 199, 1) ,
+                                    color:Colors.black, //Color.fromRGBO(33, 103, 199, 1) ,
                                     borderRadius: BorderRadius.circular(30) ,
                                   ),
                                   child: Center(child: Text("Login" , style: TextStyle(color: Colors.white),)),

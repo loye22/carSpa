@@ -1,5 +1,7 @@
 import 'package:car_spa/widgets/calender.dart';
 import 'package:car_spa/widgets/accountAvatar.dart';
+import 'package:car_spa/widgets/orders.dart';
+import 'package:car_spa/widgets/services.dart';
 import 'package:easy_sidemenu/easy_sidemenu.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
@@ -55,11 +57,18 @@ class _rootPageState extends State<rootPage> {
         icon: Icon(Icons.person),
       ),
       SideMenuItem(
-        title: 'material',
+        title: 'servicii',
         onTap: (index, _) {
           _sideMenuController.changePage(index);
         },
         icon: Icon(Icons.inventory_2),
+      ),
+      SideMenuItem(
+        title: 'Setting',
+        onTap: (index, _) {
+          _sideMenuController.changePage(index);
+        },
+        icon: Icon(Icons.settings),
       ),
     ];
   }
@@ -69,23 +78,8 @@ class _rootPageState extends State<rootPage> {
     var size = MediaQuery.of(context).size;
     return SelectionArea(
       child: Scaffold(
-        appBar: AppBar(
-          backgroundColor: Colors.white,
-          actions: [
-            Animate(
-                effects: [FadeEffect(duration: Duration(milliseconds: 700))],
-                child: customAccountWidget())
-          ],
-          // leading: Animate(
-          //   effects: [FadeEffect(duration: Duration(milliseconds: 700))],
-          //   child: Padding(
-          //     padding: const EdgeInsets.all(8.0),
-          //     child: Image.asset('assets/'),
-          //   ),
-          // ),
-          leadingWidth: 200,
-        ),
-        backgroundColor: Color.fromRGBO(242, 247, 252, 1),
+        backgroundColor: Colors.transparent,
+        //backgroundColor: Color.fromRGBO(242, 247, 252, 1),
         body: Row(
           mainAxisAlignment: MainAxisAlignment.start,
           children: [
@@ -93,14 +87,34 @@ class _rootPageState extends State<rootPage> {
               effects: [FadeEffect(duration: Duration(milliseconds: 700))],
               child: SideMenu(
                 style: SideMenuStyle(
-                  selectedTitleTextStyle: TextStyle(
-                      color: Colors.orange, fontWeight: FontWeight.w600),
-                  selectedIconColor: Colors.orange,
-                  hoverColor: Colors.blue[100],
-                  unselectedIconColor: Color.fromRGBO(20, 53, 96, 1),
+                  decoration: BoxDecoration(
+                    color: Color(0xFF2c3e50), // Sidebar background color
+                  ),
+                  displayMode: SideMenuDisplayMode.auto,
                   openSideMenuWidth: 200,
-                  //hoverColor: Colors.orange,
-                  //   selectedColor: Colors.orange  ,
+                  compactSideMenuWidth: 40,
+                  hoverColor: Color(0xFF34495e),
+                  // Hover color for menu items
+                  selectedColor: Color(0xFF1abc9c),
+                  // Background color for selected item
+                  selectedIconColor: Colors.white,
+                  unselectedIconColor: Colors.white,
+                  // White icon color for unselected items
+                  backgroundColor: Color(0xFF2c3e50),
+                  // Sidebar background color
+                  selectedTitleTextStyle: TextStyle(color: Colors.white),
+                  // White text color for selected item
+                  unselectedTitleTextStyle: TextStyle(color: Colors.white),
+                  // White text color for unselected items
+                  iconSize: 20,
+                  itemBorderRadius:
+                      const BorderRadius.all(Radius.circular(5.0)),
+                  showTooltip: true,
+                  showHamburger: true,
+                  itemHeight: 50.0,
+                  itemInnerSpacing: 8.0,
+                  itemOuterPadding: const EdgeInsets.symmetric(horizontal: 5.0),
+                  toggleColor: Colors.white, // White color for
                 ),
                 controller: _sideMenuController,
                 // title: Image.asset('assets/logo.png'),
@@ -111,16 +125,13 @@ class _rootPageState extends State<rootPage> {
                 child: PageView(
               controller: _pageController,
               children: [
+                services(),
                 Container(
                   child: Center(
                     child: calenderView(),
                   ),
                 ),
-                Container(
-                  child: Center(
-                    child: Text("2"),
-                  ),
-                ),
+                orders(),
                 Container(
                   child: Center(
                     child: Text("3"),
@@ -128,7 +139,7 @@ class _rootPageState extends State<rootPage> {
                 ),
                 Container(
                   child: Center(
-                    child: Text("4"),
+                    child: customAccountWidget(),
                   ),
                 ),
               ],

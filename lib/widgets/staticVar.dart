@@ -1,9 +1,12 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:data_table_2/data_table_2.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:loading_animation_widget/loading_animation_widget.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
+
+
+import '../widgets/confirmationDialog.dart';
 
 class staticVar {
 
@@ -48,7 +51,7 @@ class staticVar {
       fontSize: 16,
       color: Color.fromRGBO(20, 53, 96, 1));
 
-static TextStyle tableTitle = TextStyle(
+  static TextStyle tableTitle = TextStyle(
       fontFamily: 'louie',
       fontWeight: FontWeight.w600,
       fontSize: 13,
@@ -59,7 +62,7 @@ static TextStyle tableTitle = TextStyle(
       fontWeight: FontWeight.w600,
       fontSize: 13,
       color: Color.fromRGBO(114, 128, 150 , 1));
-static TextStyle subtitleStyle3 = TextStyle(
+  static TextStyle subtitleStyle3 = TextStyle(
       fontFamily: 'louie',
       fontWeight: FontWeight.w600,
       fontSize: 15,
@@ -97,7 +100,7 @@ static TextStyle subtitleStyle3 = TextStyle(
 
   static Color buttonColor = Color.fromRGBO(20, 53, 96, 1) ;
 
-static void showOverlay({
+  static void showOverlay({
     required BuildContext ctx,
     required VoidCallback onEdit,
     required VoidCallback onDelete,
@@ -142,8 +145,8 @@ static void showOverlay({
 
 
 
-  static double golobalWidth(BuildContext context ) => MediaQuery.of(context).size.width * 0.85 ;
-  static double golobalHigth(BuildContext context ) => MediaQuery.of(context).size.height * 0.81 ;
+  static double golobalWidth(BuildContext context ) => MediaQuery.of(context).size.width * 0.95 ;
+  static double golobalHigth(BuildContext context ) => MediaQuery.of(context).size.height * 0.95 ;
 
   static Color c1 = Color.fromRGBO(33, 103, 199, 1) ;
 
@@ -151,7 +154,7 @@ static void showOverlay({
 
 
 
-  static Widget loading ({ double size = 100 , Color colors = const Color(0xFF461378) })=> Center(child: LoadingAnimationWidget.staggeredDotsWave(color:colors , size: size,),);
+  static Widget loading ({ double size = 100 , Color colors =const  Color(0xFF2C3E50) })=> Center(child: LoadingAnimationWidget.staggeredDotsWave(color:colors , size: size,),);
 
   static Future<void> showSubscriptionSnackbar({required BuildContext context , required String msg}) async {
     final scaffoldMessenger = ScaffoldMessenger.of(context);
@@ -167,7 +170,7 @@ static void showOverlay({
     try {
       DateTime dateTime;
 
-      if (input is Timestamp ) {
+      if (input is Timestamp) {
         // Convert Timestamp to DateTime
         dateTime = DateTime.fromMillisecondsSinceEpoch(input.seconds * 1000);
       } else if (input is DateTime) {
@@ -191,7 +194,6 @@ static void showOverlay({
 
 
 }
-
 
 
 

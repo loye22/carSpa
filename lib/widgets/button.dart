@@ -6,7 +6,7 @@ class Button extends StatefulWidget {
   final String text;
   Color color;
 
-  Button({Key? key, required this.onTap, required this.text, this.color =const  Color(0xFF461378)})
+  Button({Key? key, required this.onTap, required this.text, this.color = Colors.black})
       : super(key: key);
 
   @override

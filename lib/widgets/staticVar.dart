@@ -154,12 +154,15 @@ class staticVar {
 
 
 
-  static Widget loading ({ double size = 100 , Color colors =const  Color(0xFF2C3E50) })=> Center(child: LoadingAnimationWidget.staggeredDotsWave(color:colors , size: size,),);
+  static Widget loading ({ double size = 100 , Color colors =const  Color(0xFF1ABC9C) , bool disableCenter = false })=> disableCenter ?  LoadingAnimationWidget.staggeredDotsWave(color:colors , size: size,) :    Center(child: LoadingAnimationWidget.staggeredDotsWave(color:colors , size: size,),);
+
+
 
   static Future<void> showSubscriptionSnackbar({required BuildContext context , required String msg}) async {
     final scaffoldMessenger = ScaffoldMessenger.of(context);
     scaffoldMessenger.showSnackBar(
       SnackBar(
+        backgroundColor: Color(0xFF1ABC9C),
         content: Text(msg),
       ),
     );

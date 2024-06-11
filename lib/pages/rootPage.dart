@@ -25,11 +25,9 @@ class _rootPageState extends State<rootPage> {
     super.initState();
     _pageController = PageController();
     _sideMenuController = SideMenuController();
-
     _sideMenuController.addListener((index) {
       _pageController.jumpToPage(index);
     });
-
     DateTime now = DateTime.now();
   }
 

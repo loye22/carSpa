@@ -1,5 +1,6 @@
 import 'package:car_spa/widgets/calender.dart';
 import 'package:car_spa/widgets/accountAvatar.dart';
+import 'package:car_spa/widgets/contractorPage.dart';
 import 'package:car_spa/widgets/employeePage.dart';
 import 'package:car_spa/widgets/orders.dart';
 import 'package:car_spa/widgets/services.dart';
@@ -54,6 +55,13 @@ class _rootPageState extends State<rootPage> {
           _sideMenuController.changePage(index);
         },
         icon: Icon(Icons.person),
+      ),
+      SideMenuItem(
+        title: 'contractor',
+        onTap: (index, _) {
+          _sideMenuController.changePage(index);
+        },
+        icon: Icon(Icons.construction),
       ),
       SideMenuItem(
         title: 'servicii',
@@ -131,13 +139,17 @@ class _rootPageState extends State<rootPage> {
                     child: calenderView(),
                   ),
                 ),
+                // orders screen
                 orders(),
+                // employee screen
                 employeePage(),
+                // contractor screen
+                contractorPage() ,
+                // servises screen
                 services(),
+                // setting screen
                 Container(
-                  child: Center(
-                    child: customAccountWidget(),
-                  ),
+                  child: customAccountWidget(),
                 ),
               ],
             ))

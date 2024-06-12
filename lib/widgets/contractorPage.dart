@@ -1,3 +1,4 @@
+import 'package:flutter/cupertino.dart';
 import 'package:car_spa/widgets/button.dart';
 import 'package:car_spa/widgets/confirmationDialog.dart';
 import 'package:car_spa/widgets/customTextFieldWidget.dart';
@@ -9,22 +10,21 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 
-class employeePage extends StatefulWidget {
-  const employeePage({super.key});
+class contractorPage extends StatefulWidget {
+  const contractorPage({super.key});
 
   @override
-  State<employeePage> createState() => _employeePageState();
+  State<contractorPage> createState() => _contractorPageState();
 }
 
-class _employeePageState extends State<employeePage> {
-  bool addNewEmpMode = false;
+class _contractorPageState extends State<contractorPage> {
+  bool newB2B = false;
   bool isLoading = false;
   bool editMode = false;
 
-  String employeeName = "";
-  String percentage = "";
+  String B2BName = "";
 
-  List<Map<String, dynamic>> emplyeeDataFromFirebase = [];
+  List<Map<String, dynamic>> B2BDataFromFirebase = [];
 
   Map<String,dynamic> editDataMode = {};
 
@@ -32,7 +32,7 @@ class _employeePageState extends State<employeePage> {
   void initState() {
     // TODO: implement initState
     super.initState();
-    fetchServices();
+    fetchB2BData();
   }
 
   @override
@@ -49,7 +49,6 @@ class _employeePageState extends State<employeePage> {
           children: [
             // The update function
             // this funciton will be updating the DB using editDataMode Map
-
             Button(
               onTap:updateRecord,
               text: "Actualizare",
@@ -67,7 +66,7 @@ class _employeePageState extends State<employeePage> {
           ],
         )
         // this gonna hanel the new servises mode
-            :(addNewEmpMode
+            :(newB2B
             ? (this.isLoading
             ? staticVar.loading(disableCenter: true)
             : Column(
@@ -80,7 +79,7 @@ class _employeePageState extends State<employeePage> {
             ),
             Button(
               onTap: () {
-                this.addNewEmpMode = false;
+                this.newB2B = false;
                 setState(() {});
               },
               text: "Back",
@@ -92,7 +91,7 @@ class _employeePageState extends State<employeePage> {
           message: "Adăugați un nou angajat",
           child: FloatingActionButton(
             onPressed: () {
-              this.addNewEmpMode = true;
+              this.newB2B = true;
               setState(() {});
             },
             child: Icon(
@@ -115,33 +114,22 @@ class _employeePageState extends State<employeePage> {
               children: [
                 customTextFieldWidget(
                   editMode: true,
-                  initialValue: editDataMode["empName"] ?? "404NotFound",
+                  initialValue: editDataMode["B2BName"] ?? "404NotFound",
                   isItNumerical: false,
-                  label: 'Numele angajatului',
-                  hintText: 'Vă rugăm să introduceți numele angajatului',
-                  onChanged: (servise) {
-                    editDataMode["empName"]  = servise;
+                  label: "Numele contractorului",
+                  hintText: "Vă rugăm să introduceți numele contractorului.",
+                  onChanged: (name) {
+                    editDataMode["B2BName"]  = name;
                   },
                 ),
-                SizedBox(height: 16.0),
-                customTextFieldWidget(
-                  editMode: true,
-                  initialValue:editDataMode["empPercentage"].toString() ?? "404NotFound" ,
-                  label: 'Preț Serviciu',
-                  hintText: 'Introduceți prețul serviciului',
-                  isItNumerical: true,
-                  onChanged: (data) {
-                    editDataMode["empPercentage"]  = data;
-                  },
-                ),
-                SizedBox(height: 16.0),
-                            ],
+
+              ],
             ),
           ),
         )
             :
         // this part gonna handel the display data and add new servises
-        (addNewEmpMode
+        (newB2B
             ? Animate(
           effects: [
             FadeEffect(duration: Duration(milliseconds: 900))
@@ -153,22 +141,13 @@ class _employeePageState extends State<employeePage> {
               children: [
                 customTextFieldWidget(
                   isItNumerical: false,
-                  label: 'Numele angajatului',
-                  hintText: 'Vă rugăm să introduceți numele angajatului',
+                  label: "Numele contractorului",
+                  hintText: "Vă rugăm să introduceți numele contractorului.",
                   onChanged: (data) {
-                    this.employeeName = data;
+                    this.B2BName = data;
                   },
                 ),
-                SizedBox(height: 16.0),
-                customTextFieldWidget(
-                  label: 'Preț Serviciu',
-                  hintText: 'Introduceți prețul serviciului',
-                  isItNumerical: true,
-                  onChanged: (price2) {
-                    this.percentage = price2;
-                  },
-                ),
-                SizedBox(height: 16.0),
+
 
               ],
             ),
@@ -192,32 +171,22 @@ class _employeePageState extends State<employeePage> {
                       child: DataTable2(
                         columnSpacing: 5,
                         columns: [
-                          staticVar.Dc("nume angajat"),
-                          staticVar.Dc("comisionat"),
-                          staticVar.Dc("adăugat la"),
-                          staticVar.Dc("opțiuni"),
-
+                          staticVar.Dc("nume contractor"),
+                          staticVar.Dc("adaugat la"),
+                          staticVar.Dc("optiune")
 
 
                         ],
-                        rows: this.emplyeeDataFromFirebase.map((e) {
-                          String nameMap =
-                              e["empName"] ?? "NotFound404";
-                          String commissioned =
-                              e["empPercentage"]?.toString() ?? "NotFound404";
-
-                          dynamic date =
-                              e["addedAt"] ?? "NotFound404";
+                        rows: this.B2BDataFromFirebase.map((e) {
+                          String nameMap = e["B2BName"] ?? "NotFound404";
+                          dynamic date =  e["addedAt"] ?? "NotFound404";
 
                           return DataRow(onLongPress: () {}, cells: [
                             DataCell(Center(child: Text(nameMap))),
-                            DataCell(Center(child: Text(commissioned))),
-
                             DataCell(
                               Center(
                                 child: Text(
-                                  staticVar
-                                      .formatDateFromTimestamp(date),
+                                  staticVar.formatDateFromTimestamp(date),
                                 ),
                               ),
                             ),
@@ -263,18 +232,16 @@ class _employeePageState extends State<employeePage> {
     );
   }
 
-  // this function will insert new employee  to the Database
+  // this function will insert new B2B  to the Database
   void sendToFirestore() async {
     try {
       isLoading = true;
       setState(() {});
       // Accessing the Firestore instance
-      if (this.employeeName.trim() == "" ||
-          this.percentage.trim() == "" ) {
+      if (this.B2BName.trim() == "" ) {
         MyDialog.showAlert(context, "Da",
-            "Vă rugăm să completați toate câmpurile din formular, inclusiv numele angajatului și procentul de comision. Vă mulțumim pentru colaborare!");
+            "Vă rugăm să completați numele contractorului și să încercați din nou. Vă mulțumim pentru colaborare!");
         print("please enter all the data ");
-
         isLoading = false;
         setState(() {});
         return;
@@ -282,42 +249,37 @@ class _employeePageState extends State<employeePage> {
 
       FirebaseFirestore firestore = FirebaseFirestore.instance;
       // Adding data to Firestore
-      await firestore.collection('employee').add({
+      await firestore.collection('b2b').add({
 
-        'empName': employeeName.trim(),
-        'empPercentage': percentage.trim(),
+        'B2BName': B2BName.trim(),
         'addedAt': DateTime.now()
       });
       print('Data added to Firestore successfully.');
-      fetchServices();
+      fetchB2BData();
       staticVar.showSubscriptionSnackbar(
           context: context, msg: "Date adăugate cu succes.");
 
       isLoading = false;
-      this.addNewEmpMode = false;
-
+      this.newB2B = false;
       setState(() {});
     } catch (e) {
       print('Error adding data to Firestore: $e');
       MyDialog.showAlert(context, "Ok", 'Error adding data to Firestore: $e');
       isLoading = false;
-      this.addNewEmpMode = false;
+      this.newB2B = false;
       setState(() {});
     }
   }
 
-  // this function will fetch the services from the firebase
-  Future<void> fetchServices() async {
+  // this function will fetch the B2B data from the firebase
+  Future<void> fetchB2BData() async {
     try {
-      this.percentage = "";
-      this.employeeName = "";
-
-
+      this.B2BName = "";
       this.isLoading = true;
       setState(() {});
       final FirebaseFirestore _firestore = FirebaseFirestore.instance;
       QuerySnapshot querySnapshot = await _firestore
-          .collection('employee')
+          .collection('b2b')
           .orderBy('addedAt', descending: true)
           .get();
       List<QueryDocumentSnapshot> docs = querySnapshot.docs;
@@ -326,7 +288,7 @@ class _employeePageState extends State<employeePage> {
         data['docId'] = doc.id; // Add the document ID to the data
         return data;
       }).toList();
-      this.emplyeeDataFromFirebase = employee;
+      this.B2BDataFromFirebase = employee;
       // print(services.first);
       setState(() {});
     } catch (e) {
@@ -338,17 +300,17 @@ class _employeePageState extends State<employeePage> {
     }
   }
 
-  // This funciton gonna delete the serices by ID
+  // This funciton gonna delete the B2B by ID
   Future<void> deleteEmployeeByDocId(
       {required String docId, required BuildContext context}) async {
     try {
       confirmationDialog.showElegantPopupWait(
           context: context,
-          message: "Sunteți sigur că doriți să ștergeți acest angajat?",
+          message: "Sunteți sigur că doriți să ștergeți acest contractor?",
           onYes: () async {
             // check id doc exsist
             final DocumentReference docRef =
-            FirebaseFirestore.instance.collection('employee').doc(docId);
+            FirebaseFirestore.instance.collection('b2b').doc(docId);
             DocumentSnapshot docSnapshot = await docRef.get();
             if (!docSnapshot.exists) {
               staticVar.showSubscriptionSnackbar(
@@ -359,12 +321,12 @@ class _employeePageState extends State<employeePage> {
             }
 
             await FirebaseFirestore.instance
-                .collection('employee')
+                .collection('b2b')
                 .doc(docId)
                 .delete();
             print('Document with ID $docId deleted successfully');
             // refresh the table
-            fetchServices();
+            fetchB2BData();
             staticVar.showSubscriptionSnackbar(
                 context: context, msg: "Șters cu succes");
           },
@@ -378,10 +340,9 @@ class _employeePageState extends State<employeePage> {
 // This function will handel the edit fucntionalty
   Future<void> updateRecord() async {
     try {
-      if (this.editDataMode["empName"].trim() == "" ||
-          this.editDataMode["empPercentage"].toString().trim() == "" ) {
+      if (this.editDataMode["B2BName"].trim() == "") {
         MyDialog.showAlert(context, "Da",
-            "Vă rugăm să completați toate câmpurile din formular, inclusiv numele angajatului și procentul de comision. Vă mulțumim pentru colaborare!");
+            "Vă rugăm să completați numele contractorului și să încercați din nou. Vă mulțumim pentru colaborare!");
         print("please enter all the data ");
 
         isLoading = false;
@@ -392,19 +353,14 @@ class _employeePageState extends State<employeePage> {
       this.isLoading = true ;
       setState(() {});
       // Get reference to the Firestore collection
-      CollectionReference collectionRef = FirebaseFirestore.instance.collection('employee');
-      double emplyeePercentage = double.tryParse(this.editDataMode["empPercentage"].toString() ?? "0.0") ?? 0.0 ;
-      if(emplyeePercentage == 0){
-        MyDialog.showAlert(context, "Ok", "error while parsing the double");
-        return;
-      }
+      CollectionReference collectionRef = FirebaseFirestore.instance.collection('b2b');
+
       // Update the document with the specified docId
       await collectionRef.doc(this.editDataMode["docId"]).update({
-        'empName' :this.editDataMode["empName"],
-        'empPercentage' :  emplyeePercentage ,
+        'B2BName' :this.editDataMode["B2BName"],
         'lastEdit' : DateTime.now()
       });
-      fetchServices();
+      fetchB2BData();
       print('Record updated successfully!');
       staticVar.showSubscriptionSnackbar(context: context, msg: "Înregistrarea a fost actualizată cu succes!") ;
 
@@ -418,6 +374,24 @@ class _employeePageState extends State<employeePage> {
       // Handle error here
     }
   }
+}
+
+
+/*
+
+
+
+
+
+
+
+
+  @override
+  Widget build(BuildContext context) {
+    return ;
+  }
+
+
 }
 
 class StatusLabel extends StatelessWidget {
@@ -441,3 +415,8 @@ class StatusLabel extends StatelessWidget {
     );
   }
 }
+
+
+
+
+ */

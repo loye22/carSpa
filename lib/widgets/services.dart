@@ -250,7 +250,7 @@ class _servicesState extends State<services> {
                                   columnSpacing: 5,
                                   columns: [
                                     staticVar.Dc("Nume serviciu"),
-                                    staticVar.Dc("Preț"),
+                                    staticVar.Dc("Preț / Lei"),
                                     staticVar.Dc("Contractat"),
                                     staticVar.Dc("Adauga la"),
                                     staticVar.Dc("Actiuni")

@@ -158,11 +158,11 @@ class staticVar {
 
 
 
-  static Future<void> showSubscriptionSnackbar({required BuildContext context , required String msg}) async {
+  static Future<void> showSubscriptionSnackbar({required BuildContext context , required String msg , Color color = const Color(0xFF1ABC9C) }) async {
     final scaffoldMessenger = ScaffoldMessenger.of(context);
     scaffoldMessenger.showSnackBar(
       SnackBar(
-        backgroundColor: Color(0xFF1ABC9C),
+        backgroundColor: color,
         content: Text(msg),
       ),
     );

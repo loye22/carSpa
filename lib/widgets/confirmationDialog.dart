@@ -26,14 +26,14 @@ class confirmationDialog{
                 onNo();
                 Navigator.of(context).pop();
               },
-              child: Text('No'),
+              child: Text('Nu'),
             ),
             TextButton(
               onPressed: () {
                 onYes();
                 Navigator.of(context).pop();
               },
-              child: Text('Yes'),
+              child: Text('Da'),
             ),
           ],
         );
@@ -59,14 +59,14 @@ class confirmationDialog{
                 onNo();
                 Navigator.of(context).pop();
               },
-              child: Text('No'),
+              child: Text('Nu'),
             ),
             TextButton(
               onPressed: () {
                 onYes();
                 Navigator.of(context).pop();
               },
-              child: Text('Yes'),
+              child: Text('Da'),
             ),
           ],
         );

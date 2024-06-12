@@ -1,5 +1,6 @@
 import 'package:car_spa/widgets/calender.dart';
 import 'package:car_spa/widgets/accountAvatar.dart';
+import 'package:car_spa/widgets/employeePage.dart';
 import 'package:car_spa/widgets/orders.dart';
 import 'package:car_spa/widgets/services.dart';
 import 'package:easy_sidemenu/easy_sidemenu.dart';
@@ -123,18 +124,16 @@ class _rootPageState extends State<rootPage> {
                 child: PageView(
               controller: _pageController,
               children: [
-                services(),
+
+                //clander
                 Container(
                   child: Center(
                     child: calenderView(),
                   ),
                 ),
                 orders(),
-                Container(
-                  child: Center(
-                    child: Text("3"),
-                  ),
-                ),
+                employeePage(),
+                services(),
                 Container(
                   child: Center(
                     child: customAccountWidget(),

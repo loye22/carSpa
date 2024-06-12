@@ -1,4 +1,5 @@
 import 'package:car_spa/widgets/staticVar.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
@@ -13,7 +14,10 @@ class customTextFieldWidget extends StatelessWidget {
   final bool editMode;
   final String initialValue;
 
-  customTextFieldWidget({
+
+
+
+ customTextFieldWidget({
     required this.label,
     required this.hintText,
     this.isHidden = false,
@@ -21,7 +25,7 @@ class customTextFieldWidget extends StatelessWidget {
     this.subLabel = "",
     this.isItNumerical = true,
     this.editMode = false ,
-    this.initialValue =""
+    this.initialValue ="" ,
 
   });
 

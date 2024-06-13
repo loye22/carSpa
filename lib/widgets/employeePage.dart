@@ -23,6 +23,7 @@ class _employeePageState extends State<employeePage> {
 
   String employeeName = "";
   String percentage = "";
+  String phoneNr = "" ;
 
   List<Map<String, dynamic>> emplyeeDataFromFirebase = [];
 
@@ -125,16 +126,28 @@ class _employeePageState extends State<employeePage> {
                 ),
                 SizedBox(height: 16.0),
                 customTextFieldWidget(
+                  suffex: "%",
                   editMode: true,
                   initialValue:editDataMode["empPercentage"].toString() ?? "404NotFound" ,
                   label: 'Preț Serviciu',
-                  hintText: 'Introduceți prețul serviciului',
+                  hintText: '0 785 458 684',
                   isItNumerical: true,
                   onChanged: (data) {
                     editDataMode["empPercentage"]  = data;
                   },
                 ),
                 SizedBox(height: 16.0),
+                customTextFieldWidget(
+                  editMode: true,
+                  initialValue:editDataMode["phoneNr"].toString() ?? "404NotFound" ,
+                  isItphoneNr:  true ,
+                  label: 'Număr de telefon',
+                  hintText: '0 777 888 999',
+                  isItNumerical: true,
+                  onChanged: (Nr) {
+                    editDataMode["phoneNr"]  = Nr;
+                  },
+                )
                             ],
             ),
           ),
@@ -161,11 +174,23 @@ class _employeePageState extends State<employeePage> {
                 ),
                 SizedBox(height: 16.0),
                 customTextFieldWidget(
+                  suffex: "%",
                   label: 'Preț Serviciu',
                   hintText: 'Introduceți prețul serviciului',
                   isItNumerical: true,
                   onChanged: (price2) {
                     this.percentage = price2;
+                  },
+                ),
+
+                customTextFieldWidget(
+
+                  isItphoneNr:  true ,
+                  label: 'Număr de telefon',
+                  hintText: '0 785 458 684',
+                  isItNumerical: true,
+                  onChanged: (Nr) {
+                    this.phoneNr = Nr ;
                   },
                 ),
                 SizedBox(height: 16.0),
@@ -174,6 +199,7 @@ class _employeePageState extends State<employeePage> {
             ),
           ),
         )
+        // display the data as table
             : Animate(
           effects: [
             FadeEffect(duration: Duration(milliseconds: 1200))
@@ -195,6 +221,7 @@ class _employeePageState extends State<employeePage> {
                           staticVar.Dc("nume angajat"),
                           staticVar.Dc("comisionat"),
                           staticVar.Dc("adăugat la"),
+                          staticVar.Dc("telefon"),
                           staticVar.Dc("opțiuni"),
 
 
@@ -208,16 +235,23 @@ class _employeePageState extends State<employeePage> {
 
                           dynamic date =
                               e["addedAt"] ?? "NotFound404";
+                          String phoneNr = e["phoneNr"] ?? "NotFound404";
 
                           return DataRow(onLongPress: () {}, cells: [
                             DataCell(Center(child: Text(nameMap))),
                             DataCell(Center(child: Text(commissioned))),
-
                             DataCell(
                               Center(
                                 child: Text(
                                   staticVar
                                       .formatDateFromTimestamp(date),
+                                ),
+                              ),
+                            ),
+                            DataCell(
+                              Center(
+                                child: Text(
+                                  phoneNr
                                 ),
                               ),
                             ),
@@ -268,9 +302,16 @@ class _employeePageState extends State<employeePage> {
     try {
       isLoading = true;
       setState(() {});
+      int percent = int.tryParse(this.percentage) ?? 0;
+      if (percent > 100 || percent < 1){
+        MyDialog.showAlert(context, "Da", "Vă rugăm să introduceți comisionul procentual între 1 și 100");
+        this.isLoading = false ;
+        setState(() {});
+        return ;
+      }
       // Accessing the Firestore instance
       if (this.employeeName.trim() == "" ||
-          this.percentage.trim() == "" ) {
+          this.percentage.trim() == "" || this.phoneNr == "" ) {
         MyDialog.showAlert(context, "Da",
             "Vă rugăm să completați toate câmpurile din formular, inclusiv numele angajatului și procentul de comision. Vă mulțumim pentru colaborare!");
         print("please enter all the data ");
@@ -286,7 +327,8 @@ class _employeePageState extends State<employeePage> {
 
         'empName': employeeName.trim(),
         'empPercentage': percentage.trim(),
-        'addedAt': DateTime.now()
+        'addedAt': DateTime.now() ,
+        'phoneNr' : this.phoneNr
       });
       print('Data added to Firestore successfully.');
       fetchServices();
@@ -311,6 +353,7 @@ class _employeePageState extends State<employeePage> {
     try {
       this.percentage = "";
       this.employeeName = "";
+      this.phoneNr = "";
 
 
       this.isLoading = true;
@@ -379,7 +422,8 @@ class _employeePageState extends State<employeePage> {
   Future<void> updateRecord() async {
     try {
       if (this.editDataMode["empName"].trim() == "" ||
-          this.editDataMode["empPercentage"].toString().trim() == "" ) {
+          this.editDataMode["empPercentage"].toString().trim() == "" ||
+          this.editDataMode["phoneNr"].toString().trim() == ""   ) {
         MyDialog.showAlert(context, "Da",
             "Vă rugăm să completați toate câmpurile din formular, inclusiv numele angajatului și procentul de comision. Vă mulțumim pentru colaborare!");
         print("please enter all the data ");
@@ -400,9 +444,10 @@ class _employeePageState extends State<employeePage> {
       }
       // Update the document with the specified docId
       await collectionRef.doc(this.editDataMode["docId"]).update({
-        'empName' :this.editDataMode["empName"],
+        'empName' :this.editDataMode["empName"].toString().trim(),
         'empPercentage' :  emplyeePercentage ,
-        'lastEdit' : DateTime.now()
+        'lastEdit' : DateTime.now() ,
+        'phoneNr' : this.editDataMode["phoneNr"].toString().trim()
       });
       fetchServices();
       print('Record updated successfully!');

@@ -45,6 +45,8 @@ dependencies:
   easy_sidemenu: ^0.6.0
   cell_calendar: ^0.8.0
   kalender: ^0.4.1
+  dropdown_button2: ^2.3.9
+  multi_dropdown: ^2.1.4
 
 dev_dependencies:
   flutter_test:

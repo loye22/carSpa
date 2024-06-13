@@ -13,6 +13,9 @@ class customTextFieldWidget extends StatelessWidget {
   final bool isItNumerical ;
   final bool editMode;
   final String initialValue;
+  final bool isItphoneNr ;
+  final String suffex ;
+
 
 
 
@@ -25,7 +28,9 @@ class customTextFieldWidget extends StatelessWidget {
     this.subLabel = "",
     this.isItNumerical = true,
     this.editMode = false ,
-    this.initialValue ="" ,
+    this.initialValue ="",
+   this.isItphoneNr = false,  this.suffex = "" ,
+
 
   });
 
@@ -54,12 +59,14 @@ class customTextFieldWidget extends StatelessWidget {
           Container(
             width: MediaQuery.of(context).size.width * 0.3,
             child: TextFormField(
+
               initialValue: editMode ? initialValue : null,
               keyboardType: this.isItNumerical ? TextInputType.numberWithOptions(decimal: true) : null,
-              inputFormatters: this.isItNumerical ? [FilteringTextInputFormatter.allow(RegExp(r'^\d+\.?\d{0,2}')) ]  : null,
+              inputFormatters: this.isItNumerical ? [FilteringTextInputFormatter.allow(RegExp(r'^\d+\.?\d{0,2}')) ] : null  ,
               onChanged: onChanged,
-              maxLength:this.isItNumerical ? 15 : null ,
+              maxLength:this.isItphoneNr ? 10 : (this.isItNumerical ? 15 : null ) ,
               decoration: InputDecoration(
+                suffix: Text(this.suffex),
                 prefixText: label == "Phone Nr" ? "+" : null ,
                 hintText: hintText,
                 fillColor: Colors.white,

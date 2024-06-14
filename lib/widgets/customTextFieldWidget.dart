@@ -15,6 +15,8 @@ class customTextFieldWidget extends StatelessWidget {
   final String initialValue;
   final bool isItphoneNr ;
   final String suffex ;
+  final bool dealerMode ;
+  final String dealerData;
 
 
 
@@ -26,10 +28,13 @@ class customTextFieldWidget extends StatelessWidget {
     this.isHidden = false,
     required this.onChanged,
     this.subLabel = "",
-    this.isItNumerical = true,
+    this.isItNumerical = false,
     this.editMode = false ,
     this.initialValue ="",
-   this.isItphoneNr = false,  this.suffex = "" ,
+   this.isItphoneNr = false,
+   this.suffex = "" ,
+   this.dealerMode = false ,
+   this.dealerData = ""
 
 
   });
@@ -56,10 +61,34 @@ class customTextFieldWidget extends StatelessWidget {
           SizedBox(
             height: 5,
           ),
+
+          this.dealerMode ?
+
           Container(
             width: MediaQuery.of(context).size.width * 0.3,
+            height: 60,
+            padding: EdgeInsets.all(8.0),
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(8.0),
+              color: Colors.grey[200],
+            ),
+            child: Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    this.dealerData,
+                    style: TextStyle(fontSize: 16),
+                  ),
+                ),
+                  Icon(
+                    Icons.lock,
+                    color: Colors.grey,
+                  ),
+              ],
+            ),
+          ) : Container(
+            width: MediaQuery.of(context).size.width * 0.3,
             child: TextFormField(
-
               initialValue: editMode ? initialValue : null,
               keyboardType: this.isItNumerical ? TextInputType.numberWithOptions(decimal: true) : null,
               inputFormatters: this.isItNumerical ? [FilteringTextInputFormatter.allow(RegExp(r'^\d+\.?\d{0,2}')) ] : null  ,
@@ -82,4 +111,8 @@ class customTextFieldWidget extends StatelessWidget {
       ),
     );
   }
+
+
+
+
 }

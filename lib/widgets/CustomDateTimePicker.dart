@@ -31,7 +31,7 @@ class _CustomDateTimePickerState extends State<CustomDateTimePicker> {
   @override
   void initState() {
     super.initState();
-    selectedDateTime = widget.initialValue;
+    selectedDateTime = DateTime.now().add(Duration(days: 1));
     _controller = TextEditingController(text: dateFormat.format(selectedDateTime));
   }
 
@@ -39,7 +39,7 @@ class _CustomDateTimePickerState extends State<CustomDateTimePicker> {
     final DateTime? pickedDate = await showDatePicker(
       context: context,
       initialDate: selectedDateTime,
-      firstDate: DateTime(2000),
+      firstDate: DateTime.now().add(Duration(days: 1)),
       lastDate: DateTime(2101),
       builder: (BuildContext context, Widget? child) {
         return Theme(

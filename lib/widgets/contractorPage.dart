@@ -25,6 +25,7 @@ class _contractorPageState extends State<contractorPage> {
   String B2BName = "";
   String email = "";
   String phoneNr = "";
+  String cui = "" ;
 
   List<Map<String, dynamic>> B2BDataFromFirebase = [];
 
@@ -148,6 +149,17 @@ class _contractorPageState extends State<contractorPage> {
                   },
                 ),
 
+                customTextFieldWidget(
+                  editMode: true,
+                  initialValue: editDataMode["cui"] ?? "404NotFound",
+                  limit: 10,
+                  label: "CUI",
+                  hintText: "RO13655452",
+                  onChanged: (data) {
+                    editDataMode["cui"]  = data;
+                  },
+                )
+
               ],
             ),
           ),
@@ -193,6 +205,15 @@ class _contractorPageState extends State<contractorPage> {
                   },
                 ),
 
+                customTextFieldWidget(
+                 limit: 10,
+                  label: "CUI",
+                  hintText: "RO13655452",
+                  onChanged: (data) {
+                    this.cui = data;
+                  },
+                ),
+
 
               ],
             ),
@@ -217,6 +238,7 @@ class _contractorPageState extends State<contractorPage> {
                         columnSpacing: 5,
                         columns: [
                           staticVar.Dc("nume contractor"),
+                          staticVar.Dc("CUI"),
                           staticVar.Dc("adaugat la"),
                           staticVar.Dc("email"),
                           staticVar.Dc("Telefone"),
@@ -229,10 +251,18 @@ class _contractorPageState extends State<contractorPage> {
                           dynamic date =  e["addedAt"] ?? "NotFound404";
                           String emailMap = e["email"] ?? "NotFound404";
                           String phoneNrMap = e["phoneNr"] ?? "NotFound404" ;
+                          String cuiMap = e["cui"] ?? "NotFound404" ;
 
 
                           return DataRow(onLongPress: () {}, cells: [
                             DataCell(Center(child: Text(nameMap))),
+                            DataCell(
+                              Center(
+                                child: Text(
+                                 cuiMap
+                                ),
+                              ),
+                            ),
                             DataCell(
                               Center(
                                 child: Text(
@@ -302,9 +332,9 @@ class _contractorPageState extends State<contractorPage> {
       isLoading = true;
       setState(() {});
       // Accessing the Firestore instance
-      if (this.B2BName.trim() == "" || this.phoneNr.trim().length !=10 || this.email.trim() == "" ) {
+      if (this.B2BName.trim() == "" || this.phoneNr.trim().length !=10 || this.email.trim() == ""  || this.cui.trim().length != 10 ) {
         MyDialog.showAlert(context, "Da",
-            "Vă rugăm să completați numele, adresa de email și numărul de telefon al contractorului și să încercați din nou. Vă mulțumim pentru colaborare!");
+            "Vă rugăm să completați numele, cui, adresa de email și numărul de telefon al contractorului și să încercați din nou. Vă mulțumim pentru colaborare!");
         print("please enter all the data ");
         isLoading = false;
         setState(() {});
@@ -318,7 +348,8 @@ class _contractorPageState extends State<contractorPage> {
         'B2BName': B2BName.trim(),
         'addedAt': DateTime.now(),
         'phoneNr' : phoneNr.trim() ,
-        'email' : email.trim()
+        'email' : email.trim(),
+        'cui' : this.cui.trim()
 
       });
       print('Data added to Firestore successfully.');
@@ -345,6 +376,7 @@ class _contractorPageState extends State<contractorPage> {
       this.email = "" ;
       this.phoneNr = "" ;
       this.isLoading = true;
+      this.cui = "" ;
      // this.editDataMode = {}  ;
       setState(() {});
       final FirebaseFirestore _firestore = FirebaseFirestore.instance;
@@ -410,7 +442,7 @@ class _contractorPageState extends State<contractorPage> {
 // This function will handel the edit fucntionalty
   Future<void> updateRecord() async {
     try {
-      if (this.editDataMode["B2BName"].trim() == "" || this.editDataMode["phoneNr"].trim().length !=10 || this.editDataMode["email"].trim() == "" ) {
+      if (this.editDataMode["B2BName"].trim() == "" || this.editDataMode["phoneNr"].trim().length !=10 || this.editDataMode["email"].trim() == ""|| this.editDataMode["cui"].toString().trim().length!= 10 ) {
         MyDialog.showAlert(context, "Da",
             "Vă rugăm să completați numele, adresa de email și numărul de telefon al contractorului și să încercați din nou. Vă mulțumim pentru colaborare!");
         print("please enter all the data ");
@@ -429,7 +461,8 @@ class _contractorPageState extends State<contractorPage> {
         'B2BName' :this.editDataMode["B2BName"],
         'lastEdit' : DateTime.now(),
         'phoneNr' : this.editDataMode["phoneNr"] ,
-        'email' :this.editDataMode["email"]
+        'email' :this.editDataMode["email"] ,
+        'cui' : this.editDataMode["cui"] ,
 
       });
       fetchB2BData();

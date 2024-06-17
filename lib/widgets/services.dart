@@ -273,7 +273,7 @@ class _servicesState extends State<services> {
                                             child: isContractMap
                                                 ? StatusLabel(
                                                     color: Colors.green,
-                                                    text: "contractor",
+                                                    text: "B2B",
                                                   )
                                                 : Text("*****")),
                                       ),

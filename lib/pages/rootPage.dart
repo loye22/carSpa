@@ -131,7 +131,10 @@ class _rootPageState extends State<rootPage> {
             Expanded(
                 child: PageView(
               controller: _pageController,
-              children: [ orders(),// delete after and un comment line 143
+              children: [
+
+                orders() ,
+
 
                 //clander
                 Container(
@@ -140,11 +143,11 @@ class _rootPageState extends State<rootPage> {
                   ),
                 ),
                 // orders screen
-              //  orders(),
+                // orders(),
                 // employee screen
                 employeePage(),
                 // contractor screen
-                contractorPage() ,
+                //contractorPage() ,
                 // servises screen
                 services(),
                 // setting screen

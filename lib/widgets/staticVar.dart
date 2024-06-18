@@ -1,3 +1,5 @@
+import 'dart:math';
+
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:data_table_2/data_table_2.dart';
 import 'package:flutter/cupertino.dart';
@@ -7,6 +9,7 @@ import 'package:loading_animation_widget/loading_animation_widget.dart';
 
 
 import '../widgets/confirmationDialog.dart';
+import 'enum.dart';
 
 class staticVar {
 
@@ -25,7 +28,6 @@ class staticVar {
           ),
         ),
       );
-
 
   static DataColumn Dc2(String name) =>
       DataColumn2(
@@ -137,14 +139,6 @@ class staticVar {
 
 
 
-
-
-
-
-
-
-
-
   static double golobalWidth(BuildContext context ) => MediaQuery.of(context).size.width * 0.95 ;
   static double golobalHigth(BuildContext context ) => MediaQuery.of(context).size.height * 0.95 ;
 
@@ -194,6 +188,166 @@ class staticVar {
       return "Error $e";
     }
   }
+
+
+
+  /// this function will return small container represnt the payment status
+  static Widget getPaymentStatusWidget({required String status2}) {
+    Color statusColor;
+    String statusText;
+
+    PaymentStatus status = parseToPaymentStatus(status2);
+    // Determine color and text based on status
+    switch (status) {
+      case PaymentStatus.paid:
+        statusColor = Colors.green;
+        statusText = "Plătit";
+        break;
+      case PaymentStatus.unpaid:
+        statusColor = Colors.red;
+        statusText = "Neplătit";
+        break;
+      case PaymentStatus.partiallyPaid:
+        statusColor = Colors.orange;
+        statusText = "Parțial plătit";
+        break;
+      case PaymentStatus.init:
+        statusColor = Colors.blue;
+        statusText = "Inițializare";
+        break;
+      default:
+        statusColor = Colors.grey;
+        statusText = "Necunoscut";
+    }
+
+    return Container(
+      padding: EdgeInsets.all(8.0),
+      decoration: BoxDecoration(
+        color: statusColor,
+        borderRadius: BorderRadius.circular(8.0),
+      ),
+      child: Text(
+        statusText,
+        style: TextStyle(
+          color: Colors.white,
+          fontWeight: FontWeight.bold,
+        ),
+      ),
+    );
+  }
+
+ /// this function will return small container represnt the order status
+  static Widget getOrderStatusWidget({required String status2 }) {
+    Color statusColor;
+    String statusText;
+
+    orderStatus status = parseToOrderStatus(status2);
+
+    // Determine color and text based on status
+    switch (status) {
+      case orderStatus.pending:
+        statusColor = Colors.orange;
+        statusText = "În așteptare";
+        break;
+      case orderStatus.canceled:
+        statusColor = Colors.red;
+        statusText = "Anulat";
+        break;
+      case orderStatus.inProgress:
+        statusColor = Colors.blue;
+        statusText = "În progres";
+        break;
+      case orderStatus.completed:
+        statusColor = Colors.green;
+        statusText = "Finalizat";
+        break;
+      case orderStatus.init:
+        statusColor = Colors.grey;
+        statusText = "Inițializare";
+        break;
+      default:
+        statusColor = Colors.grey;
+        statusText = "Necunoscut";
+    }
+
+    return Container(
+      padding: EdgeInsets.all(8.0),
+      decoration: BoxDecoration(
+        color: statusColor,
+        borderRadius: BorderRadius.circular(8.0),
+      ),
+      child: Text(
+        statusText,
+        style: TextStyle(
+          color: Colors.white,
+          fontWeight: FontWeight.bold,
+        ),
+      ),
+    );
+  }
+
+  /// this function will return color represnt the order status
+  static Color getOrderStatusColor({required String status2 }) {
+    Color statusColor;
+    String statusText;
+
+    orderStatus status = parseToOrderStatus(status2);
+
+    // Determine color and text based on status
+    switch (status) {
+      case orderStatus.pending:
+        statusColor = Colors.orange;
+        break;
+      case orderStatus.canceled:
+        statusColor = Colors.red;
+        break;
+      case orderStatus.inProgress:
+        statusColor = Colors.blue;
+        break;
+      case orderStatus.completed:
+        statusColor = Colors.green;
+        break;
+      case orderStatus.init:
+        statusColor = Colors.grey;
+        break;
+      default:
+        statusColor = Colors.grey;
+    }
+
+    return statusColor;
+  }
+
+
+
+
+
+/// this is to deal with events colors
+  static final List<Color> colors = [
+    Colors.blue,
+    Colors.red,
+    Colors.green,
+    Colors.orange,
+    Colors.purple,
+    Colors.teal,
+    Colors.yellow,
+    Colors.indigo,
+    Colors.pink,
+    Colors.cyan,
+  ];
+
+  static int _currentIndex = 0;
+
+  static Color getNextColor() {
+    Color nextColor = colors[_currentIndex];
+    _currentIndex = (_currentIndex + 1) % colors.length;
+    return nextColor;
+  }
+
+
+
+
+
+
 
 
 }

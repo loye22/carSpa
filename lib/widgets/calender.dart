@@ -1,6 +1,9 @@
 import 'dart:io';
 
 import 'package:car_spa/widgets/dialog.dart';
+import 'package:car_spa/widgets/staticVar.dart';
+
+import 'package:cloud_firestore/cloud_firestore.dart';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
@@ -14,6 +17,9 @@ class calenderView extends StatefulWidget {
 }
 
 class _calenderViewState extends State<calenderView> {
+  List<Map<String, dynamic>> ordersfromFirebase = [];
+  bool isLoading = false;
+
   final CalendarController<Event> controller = CalendarController(
     calendarDateTimeRange: DateTimeRange(
       start: DateTime(DateTime.now().year - 1),
@@ -26,6 +32,8 @@ class _calenderViewState extends State<calenderView> {
   late ViewConfiguration currentConfiguration = viewConfigurations[0];
   List<ViewConfiguration> viewConfigurations = [
     CustomMultiDayConfiguration(
+
+      showMultiDayHeader: false ,
       name: 'Day',
       numberOfDays: 1,
       startHour: 6,
@@ -33,6 +41,7 @@ class _calenderViewState extends State<calenderView> {
       createEvents: false,
     ),
     WeekConfiguration(
+      showMultiDayHeader: true ,
       startHour: 6,
       endHour: 24,
       createEvents: false,
@@ -50,139 +59,7 @@ class _calenderViewState extends State<calenderView> {
   @override
   void initState() {
     super.initState();
-    DateTime now = DateTime.now();
-    eventController.addEvents(
-        [
-          // Day 1
-          CalendarEvent(
-            modifiable: false,
-            dateTimeRange: DateTimeRange(
-              start: DateTime.now(),
-              end: DateTime.now().add(const Duration(hours: 1)),
-            ),
-            eventData: Event(
-              title: 'Event 1',
-              color: Color(0xFF2ECC71),
-              description: 'Dummy description for Event 1',
-            ),
-          ),
-          CalendarEvent(
-            modifiable: false,
-            dateTimeRange: DateTimeRange(
-              start: DateTime.now().add(const Duration(minutes: 30)),
-              end: DateTime.now().add(const Duration(hours: 2)),
-            ),
-            eventData: Event(
-              title: 'Event 2',
-              color:  Color(0xFF3498DB),
-              description: 'Dummy description for Event 2',
-            ),
-          ),
-          CalendarEvent(
-            modifiable: false,
-            dateTimeRange: DateTimeRange(
-              start: DateTime.now().add(const Duration(hours: 1, minutes: 30)),
-              end: DateTime.now().add(const Duration(hours: 3)),
-            ),
-            eventData: Event(
-              title: 'Event 3',
-              color:Color(0xFFE74C3C),
-              description: 'Dummy description for Event 3',
-            ),
-          ),
-          CalendarEvent(
-            modifiable: false,
-            dateTimeRange: DateTimeRange(
-              start: DateTime.now().add(const Duration(hours: 1, minutes: 45)),
-              end: DateTime.now().add(const Duration(hours: 3, minutes: 30)),
-            ),
-            eventData: Event(
-              title: 'Event 4',
-              color: Color(0xFFF4D03F),
-              description: 'Dummy description for Event 4',
-            ),
-          ),
-          // Day 2
-          CalendarEvent(
-            modifiable: false,
-            dateTimeRange: DateTimeRange(
-              start: DateTime.now().add(const Duration(days: 1)),
-              end: DateTime.now().add(const Duration(days: 1, hours: 1)),
-            ),
-            eventData: Event(
-              title: 'Event 5',
-              color: Color(0xFF2ECC71),
-              description: 'Dummy description for Event 5',
-            ),
-          ),
-          CalendarEvent(
-            modifiable: false,
-            dateTimeRange: DateTimeRange(
-              start: DateTime.now().add(const Duration(days: 1, minutes: 30)),
-              end: DateTime.now().add(const Duration(days: 1, hours: 2)),
-            ),
-            eventData: Event(
-              title: 'Event 6',
-              color:  Color(0xFF3498DB),
-              description: 'Dummy description for Event 6',
-            ),
-          ),
-          // Add more events for Day 2 here
-
-
-          // Day 1
-          CalendarEvent(
-            modifiable: false,
-            dateTimeRange: DateTimeRange(
-              start: DateTime.now(),
-              end: DateTime.now().add(const Duration(hours: 1 , days: 5)),
-            ),
-            eventData: Event(
-              title: 'Event 1',
-              color: Color(0xFF2ECC71),
-              description: 'Dummy description for Event 1',
-            ),
-          ),
-          CalendarEvent(
-            modifiable: false,
-            dateTimeRange: DateTimeRange(
-              start: DateTime.now().add(const Duration(minutes: 30, days: 5)),
-              end: DateTime.now().add(const Duration(hours: 2, days: 5)),
-            ),
-            eventData: Event(
-              title: 'Event 2',
-              color:  Color(0xFF3498DB),
-              description: 'Dummy description for Event 2',
-            ),
-          ),
-          CalendarEvent(
-            modifiable: false,
-            dateTimeRange: DateTimeRange(
-              start: DateTime.now().add(const Duration(hours: 1, minutes: 30, days: 5)),
-              end: DateTime.now().add(const Duration(hours: 3, days: 5)),
-            ),
-            eventData: Event(
-              title: 'Event 3',
-              color:Color(0xFFE74C3C),
-              description: 'Dummy description for Event 3',
-            ),
-          ),
-          CalendarEvent(
-            modifiable: false,
-            dateTimeRange: DateTimeRange(
-              start: DateTime.now().add(const Duration(hours: 1, minutes: 45, days: 5)),
-              end: DateTime.now().add(const Duration(hours: 3, minutes: 30, days: 5)),
-            ),
-            eventData: Event(
-              title: 'Event 4',
-              color: Color(0xFFF4D03F),
-              description: 'Dummy description for Event 4',
-            ),
-          ),
-
-          // Continue for Day 3, Day 4, etc.
-        ]
-    );
+    ordersFromFirrbase();
   }
 
   @override
@@ -191,8 +68,7 @@ class _calenderViewState extends State<calenderView> {
       style: CalendarStyle(
           backgroundColor: Colors.black,
           calendarHeaderBackgroundStyle: CalendarHeaderBackgroundStyle(
-              headerBackgroundColor: Colors.white)
-      ),
+              headerBackgroundColor: Colors.white)),
       controller: controller,
       eventsController: eventController,
       viewConfiguration: currentConfiguration,
@@ -215,10 +91,73 @@ class _calenderViewState extends State<calenderView> {
     );
   }
 
+  Future<void> ordersFromFirrbase() async {
+    this.isLoading = true;
+    setState(() {});
+    // Initialize Firebase
+    FirebaseFirestore firestore = FirebaseFirestore.instance;
+
+    // Define a list to store the fetched data
+    List<Map<String, dynamic>> ordersList = [];
+
+    try {
+      // Get all documents from the 'services' collection
+      QuerySnapshot querySnapshot = await firestore
+          .collection('orders')
+          .orderBy('issuedDate', descending: true)
+          .get();
+
+      // Loop through the documents snapshot
+      querySnapshot.docs.forEach((doc) {
+        // Get document data
+        Map<String, dynamic> data = doc.data() as Map<String, dynamic>;
+
+        // Add document ID to the data map
+        data['docId'] = doc.id;
+
+        // Add data map to the list
+        ordersList.add(data);
+      });
+
+      this.ordersfromFirebase = ordersList;
+      eventController.addEvents(this
+          .ordersfromFirebase
+          .map((e) => CalendarEvent(
+                modifiable: false,
+                dateTimeRange: DateTimeRange(
+                  start: e["appointmentDate"].toDate() ?? DateTime.now(),
+                  end: e["expectedFinishingDate"].toDate() ??
+                      DateTime.now().add(Duration(days: 5)),
+                ),
+                eventData: Event(
+                  orderData: e ?? {} ,
+                  date:staticVar.formatDateFromTimestamp(e["appointmentDate"] ?? "")  ,
+                  title: e["carModel"]?? "404Notfound" ,
+                  color: staticVar.getNextColor() , //staticVar.getOrderStatusColor(status2: e["status"] ?? "404"),
+                    employee: e["empName"] ?? "404Notfound",
+                  servises: e["selectedServices"]?.map((e) => e["serviceName"])?.toList()?.toString() ?? "404Eror"
+
+                ),
+              ))
+          .toList());
+
+      this.isLoading = false;
+      setState(() {});
+      // print(this.ordersfromFirebase);
+    } catch (e) {
+      this.isLoading = false;
+      setState(() {});
+      // Print any errors for debugging purposes
+      //print('Error fetching : $e');
+      MyDialog.showAlert(context, "Ok", 'Error fetching orders: $e');
+    }
+  }
+
   Future<void> _onEventTapped(
     CalendarEvent<Event> event,
   ) async {
-    print(event.eventData!.title.toString());
+    MyDialog.showOrderDetailsPopup(context: context, orderData: event.eventData!.orderData);
+    //print(event.eventData!.title.toString());
   }
 
   Future<void> _onEventChanged(
@@ -294,15 +233,30 @@ class _calenderViewState extends State<calenderView> {
                 ),
               ),
             ),
-            if (event.eventData?.description != null)
+            if (event.eventData?.employee != null)
               Expanded(
                 child: Padding(
                   padding: const EdgeInsets.only(left: 8.0),
                   child: Text(
-                    event.eventData!.description!,
+                    event.eventData!.employee!,
                     style: TextStyle(
                       color: Colors.white.withOpacity(0.8),
                       fontSize: 14,
+                    ),
+                  ),
+                ),
+              ),
+
+            if (event.eventData?.date != null)
+              Expanded(
+                child: Padding(
+                  padding: const EdgeInsets.only(left: 8.0),
+                  child: Text(
+                    event.eventData!.date!,
+                    style: TextStyle(
+                      color: Colors.white.withOpacity(0.8),
+                      fontSize: 14,
+                      fontWeight: FontWeight.bold
                     ),
                   ),
                 ),
@@ -312,15 +266,15 @@ class _calenderViewState extends State<calenderView> {
                 child: Padding(
                   padding: const EdgeInsets.only(left: 8.0),
                   child: Text(
-                    event.eventData!.description!,
+                    event.eventData!.servises!,
                     style: TextStyle(
                       color: Colors.white.withOpacity(0.8),
                       fontSize: 14,
+                        fontWeight: FontWeight.bold
                     ),
                   ),
                 ),
               ),
-
           ],
         ),
       ),
@@ -362,23 +316,27 @@ class _calenderViewState extends State<calenderView> {
 }
 
 class Event {
-  Event(
-      {required this.title,
-      this.description="xxx",
-      this.color = Colors.black,
-      });
-
   /// The title of the [Event].
   final String title;
 
   /// The description of the [Event].
-  final String? description;
+  final String? servises;
 
   /// The color of the [Event] tile.
   final Color? color;
 
-  // /// this is the discritpoipmn
-  // final String? subTitle;
-  //
-  // final String? url;
+  final String employee;
+
+  final String date ;
+
+  final Map<String,dynamic> orderData ;
+
+  Event(
+      {required this.title,
+      required this.color,
+      required this.employee,
+      required this.servises ,
+      required this.date ,
+        required this.orderData
+      });
 }

@@ -1,5 +1,4 @@
 import 'dart:async';
-
 import 'package:car_spa/widgets/CustomDateTimePicker.dart';
 import 'package:car_spa/widgets/PriceSummaryCard.dart';
 import 'package:car_spa/widgets/customTextFieldWidget.dart';
@@ -7,10 +6,13 @@ import 'package:car_spa/widgets/dialog.dart';
 import 'package:car_spa/widgets/enum.dart';
 import 'package:car_spa/widgets/staticVar.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:data_table_2/data_table_2.dart';
 import 'package:dropdown_button2/dropdown_button2.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/widgets.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 import 'package:multi_dropdown/multiselect_dropdown.dart';
 import 'dart:convert' as json;
 
@@ -26,18 +28,20 @@ class _ordersState extends State<orders> {
   String clientEmail = '';
   String clientPhone = '';
   String carModel = '';
-  DateTime issuedDate = DateTime.now();
+  // DateTime issuedDate = DateTime.now();
   DateTime? entranceDate = null;
 
-  DateTime appointmentDate = DateTime.now();
+  DateTime appointmentDate = DateTime.now().add(Duration(days: 1));
   DateTime? finishedDate = null;
-  orderStatus status = orderStatus.init;
+  orderStatus status = orderStatus.pending;
   PaymentStatus paymentStatus = PaymentStatus.init;
   PaymentMethod paymentMethod = PaymentMethod.init;
   String cui = '';
 
   List<Map<String, dynamic>> servicesfromFirebase = [];
   List<Map<String, dynamic>> selectedServices = [];
+  List<Map<String, dynamic>> ordersfromFirebase = [];
+
 
   List<Map<String, dynamic>> employeefromFirebase = [];
   List<Map<String, dynamic>> b2bfromFirebase = [];
@@ -47,7 +51,7 @@ class _ordersState extends State<orders> {
   double advancedPayment = 0.0;
   int discount = 0;
 
-  String createdBy = '';
+
   String servicesPounce = '';
   String imageBefore = '';
   String imageAfter = '';
@@ -64,6 +68,9 @@ class _ordersState extends State<orders> {
   String dealerID = '';
   bool dealerMode = false;
 
+  /// when this mode is ON only the assiened employee will be able to accept the order
+  bool specifecEmployeeMode = false ;
+
   ////////So here the ends for the vars that we gonna send to data base //////////////////
 
   bool addNewOrderMode = false;
@@ -74,6 +81,7 @@ class _ordersState extends State<orders> {
     // TODO: implement initState
     super.initState();
     fetchServices();
+    ordersFromFirrbase();
     fetchB2BData();
     fetchEmployee();
   }
@@ -81,54 +89,63 @@ class _ordersState extends State<orders> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      floatingActionButton: Tooltip(
-          message: "adauga ordine",
-          child: FloatingActionButton(
-            backgroundColor: Color(0xFF1ABC9C),
-            onPressed: () async {
-              await addNewOrder();
-              return;
-              print(this.selectedServices.toString());
-              MyDialog.showAlert(
-                  context,
-                  "Ok",
-                  this.clientName +
-                      "\n" +
-                      this.clientPhone +
-                      "\n" +
-                      this.clientEmail +
-                      "\n" +
-                      this.carModel +
-                      "\n" +
-                      this.issuedDate.toString() +
-                      "\n" +
-                      this.servicesPounce +
-                      "\n" +
-                      this.selectedServices.length.toString() +
-                      "\n" +
-                      this.paymentMethod.toString() +
-                      "\n" +
-                      this.empName +
-                      "\n" +
-                      this.empId +
-                      "\n" +
-                      this.paymentStatus.toString());
-            },
-            child: Icon(
-              Icons.upload,
-              color: Colors.white,
+      floatingActionButton: this.addNewOrderMode ?
+      Column(
+        mainAxisAlignment: MainAxisAlignment.end,
+        children: [
+          Tooltip(
+            message: 'trimite',
+            child: FloatingActionButton(
+              backgroundColor: Color(0xFF1ABC9C),
+              onPressed:addNewOrder,
+              child: Icon(
+                Icons.upload,
+                color: Colors.white,
+              ),
             ),
-          )),
-      body: this.isLoading
-          ? staticVar.loading()
-          : Center(
-              child: Padding(
-                padding: const EdgeInsets.all(16.0),
-                child: SingleChildScrollView(
-                    child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        crossAxisAlignment: CrossAxisAlignment.center,
-                        children: [
+          ),
+          SizedBox(height: 20,),
+          Tooltip(
+            message: 'anula',
+            child: FloatingActionButton(
+              backgroundColor: Colors.red,
+              onPressed: ()  {
+               this.addNewOrderMode = false ;
+               setState(() {});
+              },
+              child: Icon(
+                Icons.cancel_outlined,
+                color: Colors.white,
+              ),
+            ),
+          )
+        ],
+      ):
+      FloatingActionButton(
+        backgroundColor: Color(0xFF1ABC9C),
+        onPressed: () async {
+          this.addNewOrderMode = true ;
+          setState(() {});
+        },
+        child: Icon(
+          Icons.add,
+          color: Colors.white,
+        ),
+      ),
+      body:this.addNewOrderMode ?
+      // this part will handel adding new orders to the database
+      Animate(
+        effects: [FadeEffect(duration: Duration(milliseconds: 900))],
+        child: (this.isLoading
+            ? staticVar.loading()
+            : Center(
+          child: Padding(
+            padding: const EdgeInsets.all(16.0),
+            child: SingleChildScrollView(
+                child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    children: [
                       Row(
                         children: [
                           Text(
@@ -164,6 +181,7 @@ class _ordersState extends State<orders> {
                                   this.clientName = "";
                                   this.clientEmail = "";
                                   this.clientPhone = "";
+                                  this.cui = "";
 
                                   setState(() {
                                     this.dealerMode = value;
@@ -177,7 +195,39 @@ class _ordersState extends State<orders> {
                           Text(
                             "Pentru a crea o comandă B2B, porniți acest comutator.",
                             style:
-                                TextStyle(fontSize: 14.0, color: Colors.grey),
+                            TextStyle(fontSize: 14.0, color: Colors.grey),
+                          ),
+                        ],
+                      ),
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.start,
+                            children: [
+                              Text(
+                                'modul angajat',
+                                style: TextStyle(
+                                  fontSize: 18.0,
+                                ),
+                              ),
+                              Switch(
+                                value:  this.specifecEmployeeMode ,
+                                onChanged: (bool value) {
+
+                                  setState(() {
+                                    this.specifecEmployeeMode = value;
+                                  });
+                                },
+                                activeColor: Color(
+                                    0xFF1ABC9C), // color when switch is on
+                              ),
+                            ],
+                          ),
+                          Text(
+                            "Când vei activa acest comutator, doar angajatul pe care l-ai semnat va accepta comanda.",
+                            style:
+                            TextStyle(fontSize: 14.0, color: Colors.grey),
                           ),
                         ],
                       ),
@@ -188,83 +238,83 @@ class _ordersState extends State<orders> {
                         children: [
                           this.dealerMode
                               ? Container(
-                                  width: staticVar.golobalWidth(context) * .32,
-                                  child: DropdownButtonFormField2<String>(
-                                    isExpanded: true,
-                                    decoration: InputDecoration(
-                                      contentPadding:
-                                          const EdgeInsets.symmetric(
-                                              vertical: 16),
-                                      border: OutlineInputBorder(
-                                        borderRadius: BorderRadius.circular(15),
-                                      ),
-                                      // Add more decoration..
-                                    ),
-                                    hint: const Text(
-                                      "Vă rog să selectați clientul.",
-                                      style: TextStyle(fontSize: 14),
-                                    ),
-                                    items: this
-                                        .b2bfromFirebase
-                                        .map((item) => DropdownMenuItem<String>(
-                                              value: json
-                                                  .jsonEncode(item)
-                                                  .toString(),
-                                              child: Text(
-                                                item["B2BName"],
-                                                style: const TextStyle(
-                                                  fontSize: 14,
-                                                ),
-                                              ),
-                                            ))
-                                        .toList(),
-                                    onChanged: (value) {
-                                      Map<String, dynamic> valueMap =
-                                          json.jsonDecode(value ?? "");
-                                      this.dealerID = valueMap["docId"];
-                                      this.dealerName = valueMap["B2BName"];
-                                      this.clientName = valueMap["B2BName"];
-                                      this.clientEmail = valueMap["email"];
-                                      this.clientPhone = valueMap["phoneNr"];
-                                      this.cui =  valueMap['cui'];
-                                      setState(() {});
-                                    },
-                                    buttonStyleData: const ButtonStyleData(
-                                      padding: EdgeInsets.only(right: 8),
-                                    ),
-                                    iconStyleData: const IconStyleData(
-                                      icon: Icon(
-                                        Icons.arrow_drop_down,
-                                        color: Colors.black45,
-                                      ),
-                                      iconSize: 24,
-                                    ),
-                                    dropdownStyleData: DropdownStyleData(
-                                      decoration: BoxDecoration(
-                                        borderRadius: BorderRadius.circular(15),
-                                      ),
-                                    ),
-                                    menuItemStyleData: const MenuItemStyleData(
-                                      padding:
-                                          EdgeInsets.symmetric(horizontal: 16),
-                                    ),
-                                  ),
-                                )
-                              : Expanded(
-                                  child: customTextFieldWidget(
-                                    label: 'Nume Client *',
-                                    // Text pentru eticheta
-                                    hintText: 'Introduceți numele clientului',
-                                    // Text pentru sugestie
-                                    onChanged: (value) {
-                                      setState(
-                                        () {
-                                          clientName = value;
-                                        },
-                                      );
-                                    },
+                            width: staticVar.golobalWidth(context) * .32,
+                            child: DropdownButtonFormField2<String>(
+                              isExpanded: true,
+                              decoration: InputDecoration(
+                                contentPadding:
+                                const EdgeInsets.symmetric(
+                                    vertical: 16),
+                                border: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(15),
+                                ),
+                                // Add more decoration..
+                              ),
+                              hint: const Text(
+                                "Vă rog să selectați clientul.",
+                                style: TextStyle(fontSize: 14),
+                              ),
+                              items: this
+                                  .b2bfromFirebase
+                                  .map((item) => DropdownMenuItem<String>(
+                                value: json
+                                    .jsonEncode(item)
+                                    .toString(),
+                                child: Text(
+                                  item["B2BName"],
+                                  style: const TextStyle(
+                                    fontSize: 14,
                                   ),
                                 ),
+                              ))
+                                  .toList(),
+                              onChanged: (value) {
+                                Map<String, dynamic> valueMap =
+                                json.jsonDecode(value ?? "");
+                                this.dealerID = valueMap["docId"];
+                                this.dealerName = valueMap["B2BName"];
+                                this.clientName = valueMap["B2BName"];
+                                this.clientEmail = valueMap["email"];
+                                this.clientPhone = valueMap["phoneNr"];
+                                this.cui =  valueMap['cui'];
+                                setState(() {});
+                              },
+                              buttonStyleData: const ButtonStyleData(
+                                padding: EdgeInsets.only(right: 8),
+                              ),
+                              iconStyleData: const IconStyleData(
+                                icon: Icon(
+                                  Icons.arrow_drop_down,
+                                  color: Colors.black45,
+                                ),
+                                iconSize: 24,
+                              ),
+                              dropdownStyleData: DropdownStyleData(
+                                decoration: BoxDecoration(
+                                  borderRadius: BorderRadius.circular(15),
+                                ),
+                              ),
+                              menuItemStyleData: const MenuItemStyleData(
+                                padding:
+                                EdgeInsets.symmetric(horizontal: 16),
+                              ),
+                            ),
+                          )
+                              : Expanded(
+                            child: customTextFieldWidget(
+                              label: 'Nume Client *',
+                              // Text pentru eticheta
+                              hintText: 'Introduceți numele clientului',
+                              // Text pentru sugestie
+                              onChanged: (value) {
+                                setState(
+                                      () {
+                                    clientName = value;
+                                  },
+                                );
+                              },
+                            ),
+                          ),
                           SizedBox(
                               width: this.dealerMode
                                   ? staticVar.golobalWidth(context) * .13
@@ -322,28 +372,30 @@ class _ordersState extends State<orders> {
                         children: [
                           this.dealerMode
                               ? Expanded(
-                                  child: customTextFieldWidget(
-                                    dealerMode: this.dealerMode,
-                                    dealerData: this.cui,
-                                    label: 'CUI',
-                                    hintText: 'client@example.com',
-                                    onChanged: (value) {},
-                                  ),
-                                )
+                            child: customTextFieldWidget(
+                              dealerMode: this.dealerMode,
+                              dealerData: this.cui,
+                              label: 'CUI',
+                              hintText: 'client@example.com',
+                              onChanged: (value) {},
+                            ),
+                          )
                               : Expanded(
-                                  child: customTextFieldWidget(
-                                    label: 'CUI',
-                                    hintText: 'Enter CUI',
-                                    onChanged: (value) {
-                                      setState(() {
-                                        cui = value;
-                                      });
-                                    },
-                                  ),
-                                ),
+                            child: customTextFieldWidget(
+                              limit: 10,
+                              label: 'CUI',
+                              hintText: 'Enter CUI',
+                              onChanged: (value) {
+                                setState(() {
+                                  cui = value;
+                                });
+                              },
+                            ),
+                          ),
                           SizedBox(width: 16.0),
                           Expanded(
                             child: customTextFieldWidget(
+                              isItNumerical : true ,
                               isItDiscount: true,
                               label: 'Discount',
                               hintText: 'Enter Discount',
@@ -353,7 +405,7 @@ class _ordersState extends State<orders> {
                                   discount = int.tryParse(value) ?? 0;
                                 });
                               },
-                              isItNumerical: true,
+
                             ),
                           ),
                         ],
@@ -415,16 +467,16 @@ class _ordersState extends State<orders> {
                                   ),
                                   items: PaymentMethod.values
                                       .getRange(
-                                          0, PaymentMethod.values.length - 1)
+                                      0, PaymentMethod.values.length - 1)
                                       .map((item) => DropdownMenuItem<String>(
-                                            value: item.toString(),
-                                            child: Text(
-                                              item.toString().split(".").last,
-                                              style: const TextStyle(
-                                                fontSize: 14,
-                                              ),
-                                            ),
-                                          ))
+                                    value: item.toString(),
+                                    child: Text(
+                                      item.toString().split(".").last,
+                                      style: const TextStyle(
+                                        fontSize: 14,
+                                      ),
+                                    ),
+                                  ))
                                       .toList(),
                                   onChanged: (value) {
                                     this.paymentMethod =
@@ -451,7 +503,7 @@ class _ordersState extends State<orders> {
                                   ),
                                   menuItemStyleData: const MenuItemStyleData(
                                     padding:
-                                        EdgeInsets.symmetric(horizontal: 16),
+                                    EdgeInsets.symmetric(horizontal: 16),
                                   ),
                                 ),
                               ),
@@ -482,14 +534,14 @@ class _ordersState extends State<orders> {
                                   items: this
                                       .employeefromFirebase
                                       .map((item) => DropdownMenuItem<String>(
-                                            value: item["docId"],
-                                            child: Text(
-                                              item["empName"],
-                                              style: const TextStyle(
-                                                fontSize: 14,
-                                              ),
-                                            ),
-                                          ))
+                                    value: item["docId"],
+                                    child: Text(
+                                      item["empName"],
+                                      style: const TextStyle(
+                                        fontSize: 14,
+                                      ),
+                                    ),
+                                  ))
                                       .toList(),
                                   onChanged: (value) {
                                     if (value == null) {
@@ -502,7 +554,7 @@ class _ordersState extends State<orders> {
                                     this.empName = this
                                         .employeefromFirebase
                                         .where((element) =>
-                                            element["docId"] == value)
+                                    element["docId"] == value)
                                         .first["empName"];
                                   },
                                   buttonStyleData: const ButtonStyleData(
@@ -522,7 +574,7 @@ class _ordersState extends State<orders> {
                                   ),
                                   menuItemStyleData: const MenuItemStyleData(
                                     padding:
-                                        EdgeInsets.symmetric(horizontal: 16),
+                                    EdgeInsets.symmetric(horizontal: 16),
                                   ),
                                 ),
                               ),
@@ -552,16 +604,16 @@ class _ordersState extends State<orders> {
                                   ),
                                   items: PaymentStatus.values
                                       .getRange(
-                                          0, PaymentStatus.values.length - 1)
+                                      0, PaymentStatus.values.length - 1)
                                       .map((item) => DropdownMenuItem<String>(
-                                            value: item.toString(),
-                                            child: Text(
-                                              item.toString().split(".").last,
-                                              style: const TextStyle(
-                                                fontSize: 14,
-                                              ),
-                                            ),
-                                          ))
+                                    value: item.toString(),
+                                    child: Text(
+                                      item.toString().split(".").last,
+                                      style: const TextStyle(
+                                        fontSize: 14,
+                                      ),
+                                    ),
+                                  ))
                                       .toList(),
                                   onChanged: (value) {
                                     this.paymentStatus =
@@ -589,7 +641,7 @@ class _ordersState extends State<orders> {
                                   ),
                                   menuItemStyleData: const MenuItemStyleData(
                                     padding:
-                                        EdgeInsets.symmetric(horizontal: 16),
+                                    EdgeInsets.symmetric(horizontal: 16),
                                   ),
                                 ),
                               ),
@@ -599,28 +651,28 @@ class _ordersState extends State<orders> {
                               ),
                               this.paymentStatus == PaymentStatus.partiallyPaid
                                   ? customTextFieldWidget(
-                                      limit: 4,
-                                      isItNumerical: true,
-                                      label: "plată în avans",
-                                      hintText: "... Ron",
-                                      onChanged: (value) {
-                                        double advancePayment =
-                                            double.tryParse(value) ?? 0.0;
-                                        double totalPriceSummry =
-                                            double.tryParse(
-                                                    this.priceSummryDetails[
-                                                            "totalWithVat"] ??
-                                                        "0.0") ??
-                                                0.0;
-                                        if (advancePayment >=
-                                            totalPriceSummry) {
-                                          MyDialog.showAlert(context, "Ok",
-                                              "Plata în avans pe care ați introdus-o este egală sau mai mare decât factura totală. Vă rugăm să vă asigurați că introduceți o plată în avans validă");
-                                          advancePayment = 0.0;
-                                        }
-                                        this.advancedPayment = advancePayment;
-                                        setState(() {});
-                                      })
+                                  limit: 4,
+                                  isItNumerical: true,
+                                  label: "plată în avans",
+                                  hintText: "... Ron",
+                                  onChanged: (value) {
+                                    double advancePayment =
+                                        double.tryParse(value) ?? 0.0;
+                                    double totalPriceSummry =
+                                        double.tryParse(
+                                            this.priceSummryDetails[
+                                            "totalWithVat"] ??
+                                                "0.0") ??
+                                            0.0;
+                                    if (advancePayment >=
+                                        totalPriceSummry) {
+                                      MyDialog.showAlert(context, "Ok",
+                                          "Plata în avans pe care ați introdus-o este egală sau mai mare decât factura totală. Vă rugăm să vă asigurați că introduceți o plată în avans validă");
+                                      advancePayment = 0.0;
+                                    }
+                                    this.advancedPayment = advancePayment;
+                                    setState(() {});
+                                  })
                                   : SizedBox.shrink(),
                               // servises
                               SizedBox(
@@ -659,7 +711,7 @@ class _ordersState extends State<orders> {
                                       backgroundColor: Color(0xFF1ABC9C)),
                                   dropdownHeight: 300,
                                   optionTextStyle:
-                                      const TextStyle(fontSize: 16),
+                                  const TextStyle(fontSize: 16),
                                   selectedOptionIcon: const Icon(
                                     Icons.check_circle,
                                     color: Color(0xFF1ABC9C),
@@ -694,161 +746,217 @@ class _ordersState extends State<orders> {
                         height: 500,
                       )
                     ])),
-              ),
-            ),
+          ),
+        )),
+      ) :
+          // this part will show all the oders
+      Animate(
+        effects: [
+          FadeEffect(duration: Duration(milliseconds: 1200))
+        ],
+        child: Center(
+          child: Container(
+              width: staticVar.golobalWidth(context),
+              height: staticVar.golobalHigth(context),
+              decoration: BoxDecoration(
+                //    border: Border.all(color: Colors.black.withOpacity(.33)),
+                  borderRadius: BorderRadius.circular(10),
+                  color: Colors.white),
+              child: Card(
+                  elevation: 1,
+                  child: Center(
+                    child: DataTable2(
+                      columnSpacing: 5,
+                      columns: [
+                        staticVar.Dc("Model de mașină"),
+                        staticVar.Dc("statusul plății"),
+                        staticVar.Dc("statusul comenzii"),
+                        staticVar.Dc("data adăugată"),
+                        staticVar.Dc("programare")
+                      ],
+                      rows: this.ordersfromFirebase.map((e) {
+                        String carModeMap = e["carModel"]?? "404Notfound";
+                        String paymentStatusMap = e["paymentStatus"]?? "404Notfound";
+                        String orderStatusMap = e["status"]?? "404Notfound";
+                        String addedDate = staticVar.formatDateFromTimestamp(e["issuedDate"])?? "404Notfound";
+                        String appotimentMap = staticVar.formatDateFromTimestamp(e["appointmentDate"])?? "404Notfound";
+
+                        return DataRow(cells: [
+                          DataCell(Center(child:  Text(carModeMap))),
+                          DataCell(Center(child:  staticVar.getPaymentStatusWidget(status2: paymentStatusMap))),
+                          DataCell(Center(child:  staticVar.getOrderStatusWidget(status2: orderStatusMap))),
+                          DataCell(Center(child:  Text(addedDate))),
+                          DataCell(Center(child:  Text(appotimentMap))),
+                        ]);
+                      }).toList()
+                    ),
+                  ))),
+        ),
+      ),
     );
   }
 
   /// this function is going to insert new order in the Database
   Future<void> addNewOrder() async {
-    /// check the mandetory inputs
-
-    /// Check the name validity
-    if (this.clientName.trim() == "" || this.clientName.trim().length < 4) {
-      String msg =
-          "Vă rugăm să vă asigurați că introduceți un nume de client valid și că acesta are mai mult de 3 caractere.";
-      MyDialog.showAlert(context, "Ok ", msg);
-      return;
-    }
-
-    /// the email is not mandetory
-
-    /// check the phone validity
-    if (this.clientPhone.trim() == "" || this.clientPhone.trim().length < 10) {
-      String msg =
-          "Vă rugăm să introduceți un număr de telefon valid, care să aibă 10 caractere.";
-      MyDialog.showAlert(context, "Ok ", msg);
-      return;
-    }
-
-    /// check the car model validity
-    if (this.carModel.trim() == "" || this.carModel.trim().length < 9) {
-      String msg =
-          "Vă rugăm să introduceți modelul mașinii și să vă asigurați că are mai mult de 10 caractere.";
-      MyDialog.showAlert(context, "Ok ", msg);
-      return;
-    }
-
-    // the CUI validation ****************************************
-
-    ///////////////////////////////////////////////////////////////
-
-    /// check if if the user choose payment method
-    if (this.paymentMethod == PaymentMethod.init) {
-      String msg = "Vă rugăm să selectați metoda de plată și încercați din nou";
-      MyDialog.showAlert(context, "Ok ", msg);
-      return;
-    }
-
-    /// check the payment status
-    if (this.paymentStatus == PaymentStatus.init) {
-      String msg =
-          "Vă rugăm să verificați starea plății și să încercați din nou.";
-      MyDialog.showAlert(context, "Ok ", msg);
-      return;
-    }
-
-    /// check if the advance payment is less than the total bill
-
-    double totalPriceSummry =
-        double.tryParse(this.priceSummryDetails["totalWithVat"] ?? "0.0") ??
-            0.0;
-    if (this.paymentStatus == PaymentStatus.partiallyPaid &&
-        this.advancedPayment >= totalPriceSummry) {
-      MyDialog.showAlert(context, "Ok",
-          "Plata în avans pe care ați introdus-o este egală sau mai mare decât factura totală. Vă rugăm să vă asigurați că introduceți o plată în avans validă");
-      this.advancedPayment = 0.0;
+    try{
+      this.isLoading = true ;
       setState(() {});
-      return;
-    }
+      /// check the mandetory inputs
 
-    /// check if the advance payment status is valid by making sure that the advance payment is > 0 and
-    if (this.paymentStatus == PaymentStatus.partiallyPaid &&
-        this.advancedPayment <= 0) {
-      MyDialog.showAlert(context, "Ok",
-          "Ți-ai selectat plata anticipată ca statut de plată. Te rog asigură-te că plata anticipată este mai mare decât 0.");
+      /// Check the name validity
+      if (this.clientName.trim() == "" || this.clientName.trim().length < 4) {
+        String msg =
+            "Vă rugăm să vă asigurați că introduceți un nume de client valid și că acesta are mai mult de 3 caractere.";
+        MyDialog.showAlert(context, "Ok ", msg);
+        return;
+      }
 
+      /// the email is not mandetory
+
+      /// check the phone validity
+      if (this.clientPhone.trim() == "" || this.clientPhone.trim().length < 10) {
+        String msg =
+            "Vă rugăm să introduceți un număr de telefon valid, care să aibă 10 caractere.";
+        MyDialog.showAlert(context, "Ok ", msg);
+        return;
+      }
+
+      /// check the car model validity
+      if (this.carModel.trim() == "" || this.carModel.trim().length < 9) {
+        String msg =
+            "Vă rugăm să introduceți modelul mașinii și să vă asigurați că are mai mult de 10 caractere.";
+        MyDialog.showAlert(context, "Ok ", msg);
+        return;
+      }
+
+      // the CUI validation ****************************************
+
+      ///////////////////////////////////////////////////////////////
+
+      /// check if if the user choose payment method
+      if (this.paymentMethod == PaymentMethod.init) {
+        String msg = "Vă rugăm să selectați metoda de plată și încercați din nou";
+        MyDialog.showAlert(context, "Ok ", msg);
+        return;
+      }
+
+      /// check the payment status
+      if (this.paymentStatus == PaymentStatus.init) {
+        String msg =
+            "Vă rugăm să verificați starea plății și să încercați din nou.";
+        MyDialog.showAlert(context, "Ok ", msg);
+        return;
+      }
+
+      /// check if the advance payment is less than the total bill
+
+      double totalPriceSummry =
+          double.tryParse(this.priceSummryDetails["totalWithVat"] ?? "0.0") ??
+              0.0;
+      if (this.paymentStatus == PaymentStatus.partiallyPaid &&
+          this.advancedPayment >= totalPriceSummry) {
+        MyDialog.showAlert(context, "Ok",
+            "Plata în avans pe care ați introdus-o este egală sau mai mare decât factura totală. Vă rugăm să vă asigurați că introduceți o plată în avans validă");
+        this.advancedPayment = 0.0;
+        setState(() {});
+        return;
+      }
+
+      /// check if the advance payment status is valid by making sure that the advance payment is > 0 and
+      if (this.paymentStatus == PaymentStatus.partiallyPaid &&
+          this.advancedPayment <= 0) {
+        MyDialog.showAlert(context, "Ok",
+            "Ți-ai selectat plata anticipată ca statut de plată. Te rog asigură-te că plata anticipată este mai mare decât 0.");
+
+        setState(() {});
+        return;
+      }
+
+      /// check if the employee is selected
+      if (this.empName.trim() == "") {
+        String msg =
+            "Vă rugăm să selectați angajatul responsabil pentru această comandă.";
+        MyDialog.showAlert(context, "Ok ", msg);
+        return;
+      }
+
+      /// Check that the user has been added some servises
+      if (this.selectedServices.length == 0) {
+        String msg =
+            "Te rog adaugă serviciile pentru această comandă și încearcă din nou.";
+        MyDialog.showAlert(context, "Ok ", msg);
+        return;
+      }
+
+      /// get the current user email
+      User? user = FirebaseAuth.instance.currentUser;
+
+      Map<String, dynamic> orderData = {
+        'clientName': this.clientName,
+        'clientEmail': this.clientEmail,
+        'clientPhone': this.clientPhone,
+        'carModel': this.carModel,
+        'issuedDate': DateTime.now(),
+        'entranceDate': null ,
+        'appointmentDate': this.appointmentDate,
+        'finishedDate': null ,
+        'expectedFinishingDate' : this.appointmentDate.add(Duration(days: 5)) ,
+        'status': status.toString(),
+        'paymentStatus': this.paymentStatus.toString(),
+        'paymentMethod': this.paymentMethod.toString(),
+        'cui': this.cui,
+        'selectedServices': this.selectedServices,
+        'priceSummryDetails': this.priceSummryDetails,
+        'advancedPayment': this.advancedPayment,
+        'discount': this.discount,
+        'createdBy': user?.email ,
+        'servicesPounce': this.servicesPounce,
+        'imageBefore': "",
+        'imageAfter': "",
+        'lock': lock,
+        'empId': this.empId,
+        'empName': this.empName,
+        'empAcceptanceTimestamp': null ,
+        'completionTimestamp': null ,
+        'billUrl': "",
+        'dealerName': this.dealerName,
+        'dealerID': this.dealerID,
+        'dealerMode': this.dealerMode,
+        'specifecEmployeeMode' : this.specifecEmployeeMode
+      };
+
+      final FirebaseFirestore firestore = FirebaseFirestore.instance;
+      await firestore.collection('orders').add(orderData);
+      staticVar.showSubscriptionSnackbar(context: context, msg: "Comanda a fost adăugată cu succes.");
+      ordersFromFirrbase();
+      this.isLoading = false ;
+      this.addNewOrderMode = false ;
       setState(() {});
-      return;
+
+
+
+      /// test the data before send
+      // for (var i in orderData.keys ){
+      //   print(i.toString() + " " + orderData[i].toString());
+      //
+      // }
+
     }
 
-    /// check if the employee is selected
-    if (this.empName.trim() == "") {
-      String msg =
-          "Vă rugăm să selectați angajatul responsabil pentru această comandă.";
-      MyDialog.showAlert(context, "Ok ", msg);
-      return;
+    catch (e){
+
+      MyDialog.showAlert(context, "Ok", "Error adding order: $e");
+      this.isLoading = false  ;
+      setState(() {});
+
+    }
+    finally{
+      this.isLoading = false  ;
+      setState(() {});
+
     }
 
-    /// Check that the user has been added some servises
-    if (this.selectedServices.length == 0) {
-      String msg =
-          "Te rog adaugă serviciile pentru această comandă și încearcă din nou.";
-      MyDialog.showAlert(context, "Ok ", msg);
-      return;
-    }
 
-    /// sending the data tot the
-    ///
-    print(this.clientName +
-        "Client Name: " +
-        this.clientName +
-        "\n" +
-        "Client Phone: " +
-        this.clientPhone +
-        "\n" +
-        "Client Email: " +
-        this.clientEmail +
-        "\n" +
-        "Car Model: " +
-        this.carModel +
-        "\n" +
-        "CUI: " +
-        this.cui +
-        "\n" +
-        "Issued Date: " +
-        this.issuedDate.toString() +
-        "\n" +
-        "Services Pounce: " +
-        this.servicesPounce +
-        "\n" +
-        "Selected Services: " +
-        this.selectedServices.toString() +
-        "\n" +
-        "Payment Method: " +
-        this.paymentMethod.toString() +
-        "\n" +
-        "Employee Name: " +
-        this.empName +
-        "\n" +
-        "Employee ID: " +
-        this.empId +
-        "\n" +
-        "Payment Status: " +
-        this.paymentStatus.toString() +
-        "\n" +
-        "Appointment Date: " +
-        this.appointmentDate.toString() +
-        "\n" +
-        "Price Summary Details: " +
-        this.priceSummryDetails.toString() +
-        "\n" +
-        "Discount: " +
-        this.discount.toString() +
-        "\n" +
-        "Dealer Name: " +
-        this.dealerName +
-        "\n" +
-        "Dealer Mode: " +
-        this.dealerMode.toString() +
-        "\n" +
-        "Dealer ID: " +
-        this.dealerID +
-        "\n" +
-        "AdvancePatyment" +
-        this.advancedPayment.toString());
-
-    MyDialog.showAlert(context, "Ok ", "All GOOD!!!!!");
   }
 
   // this fucniotn gonna parse the selected string item back to Emum
@@ -890,7 +998,7 @@ class _ordersState extends State<orders> {
     try {
       // Get all documents from the 'services' collection
       QuerySnapshot querySnapshot =
-          await firestore.collection('services').get();
+          await firestore.collection('services').orderBy('addedAt', descending: true).get();
 
       // Loop through the documents snapshot
       querySnapshot.docs.forEach((doc) {
@@ -994,4 +1102,42 @@ class _ordersState extends State<orders> {
       MyDialog.showAlert(context, "Ok", 'Error fetching employee: $e');
     }
   }
+
+  // this function gonna fetch all the orders
+  Future<void> ordersFromFirrbase() async {
+    // Initialize Firebase
+    FirebaseFirestore firestore = FirebaseFirestore.instance;
+
+    // Define a list to store the fetched data
+    List<Map<String, dynamic>> ordersList = [];
+
+    try {
+      // Get all documents from the 'services' collection
+      QuerySnapshot querySnapshot =
+      await firestore.collection('orders').orderBy('issuedDate', descending: true).get();
+
+      // Loop through the documents snapshot
+      querySnapshot.docs.forEach((doc) {
+        // Get document data
+        Map<String, dynamic> data = doc.data() as Map<String, dynamic>;
+
+        // Add document ID to the data map
+        data['docId'] = doc.id;
+
+        // Add data map to the list
+        ordersList.add(data);
+      });
+
+      this.ordersfromFirebase = ordersList;
+      print(this.ordersfromFirebase);
+      this.isLoading = false;
+      setState(() {});
+      //print(this.employeefromFirebase);
+    } catch (e) {
+      // Print any errors for debugging purposes
+      print('Error fetching : $e');
+      MyDialog.showAlert(context, "Ok", 'Error fetching orders: $e');
+    }
+  }
+
 }

@@ -100,6 +100,7 @@ class customTextFieldWidget extends StatelessWidget {
                         ? [
                             LengthLimitingTextInputFormatter(3),
                             LimitRangeTextInputFormatter(0, 100),
+                            FilteringTextInputFormatter.digitsOnly
                           ]
                         : (this.isItDiscount
                             ? [

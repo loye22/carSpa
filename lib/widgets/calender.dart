@@ -1,10 +1,7 @@
 import 'dart:io';
-
 import 'package:car_spa/widgets/dialog.dart';
 import 'package:car_spa/widgets/staticVar.dart';
-
 import 'package:cloud_firestore/cloud_firestore.dart';
-
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:kalender/kalender.dart';
@@ -29,7 +26,7 @@ class _calenderViewState extends State<calenderView> {
   final CalendarEventsController<Event> eventController =
       CalendarEventsController<Event>();
 
-  late ViewConfiguration currentConfiguration = viewConfigurations[0];
+  late ViewConfiguration currentConfiguration = viewConfigurations[2];
   List<ViewConfiguration> viewConfigurations = [
     CustomMultiDayConfiguration(
 
@@ -86,7 +83,7 @@ class _calenderViewState extends State<calenderView> {
 
     return SafeArea(
       child: Scaffold(
-        body: calendar,
+        body:this.isLoading ? staticVar.loading() : calendar,
       ),
     );
   }
@@ -141,6 +138,7 @@ class _calenderViewState extends State<calenderView> {
               ))
           .toList());
 
+      await Future.delayed(Duration(seconds: 1));
       this.isLoading = false;
       setState(() {});
       // print(this.ordersfromFirebase);

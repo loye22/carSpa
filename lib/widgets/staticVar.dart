@@ -142,6 +142,9 @@ class staticVar {
   static double golobalWidth(BuildContext context ) => MediaQuery.of(context).size.width * 0.95 ;
   static double golobalHigth(BuildContext context ) => MediaQuery.of(context).size.height * 0.95 ;
 
+  static double fullWidth(BuildContext context ) => MediaQuery.of(context).size.width  ;
+  static double fullhigth(BuildContext context ) => MediaQuery.of(context).size.height  ;
+
   static Color c1 = Color.fromRGBO(33, 103, 199, 1) ;
 
   static Widget divider()=>  Container(decoration: BoxDecoration(border: Border.all(color: Colors.grey , width:  .5)),);
@@ -180,6 +183,33 @@ class staticVar {
 
       // Format the DateTime
       String formattedDate = DateFormat('dd MMM yyyy').format(dateTime);
+
+      return formattedDate;
+    }
+    catch(e){
+      print("Error $e");
+      return "Error $e";
+    }
+  }
+
+  /// this function with show the timestamp as date with time ex,, 24 may 2024 15.00
+  static String formatDateFromTimestampWithTime(dynamic input) {
+    try {
+      DateTime dateTime;
+
+      if (input is Timestamp) {
+        // Convert Timestamp to DateTime
+        dateTime = DateTime.fromMillisecondsSinceEpoch(input.seconds * 1000);
+      } else if (input is DateTime) {
+        // Input is already DateTime
+        dateTime = input;
+      } else {
+        // Handle other cases
+        throw Exception('Invalid input type');
+      }
+
+      // Format the DateTime
+      String formattedDate = DateFormat('dd MMM yyyy HH:mm').format(dateTime);
 
       return formattedDate;
     }

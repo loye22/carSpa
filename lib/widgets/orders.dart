@@ -1,9 +1,11 @@
 import 'dart:async';
 import 'package:car_spa/widgets/CustomDateTimePicker.dart';
 import 'package:car_spa/widgets/PriceSummaryCard.dart';
+import 'package:car_spa/widgets/button.dart';
 import 'package:car_spa/widgets/customTextFieldWidget.dart';
 import 'package:car_spa/widgets/dialog.dart';
 import 'package:car_spa/widgets/enum.dart';
+import 'package:car_spa/widgets/orderDetails.dart';
 import 'package:car_spa/widgets/staticVar.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:data_table_2/data_table_2.dart';
@@ -28,6 +30,7 @@ class _ordersState extends State<orders> {
   String clientEmail = '';
   String clientPhone = '';
   String carModel = '';
+
   // DateTime issuedDate = DateTime.now();
   DateTime? entranceDate = null;
 
@@ -42,15 +45,15 @@ class _ordersState extends State<orders> {
   List<Map<String, dynamic>> selectedServices = [];
   List<Map<String, dynamic>> ordersfromFirebase = [];
 
-
   List<Map<String, dynamic>> employeefromFirebase = [];
   List<Map<String, dynamic>> b2bfromFirebase = [];
 
   Map<String, dynamic> priceSummryDetails = {};
+  Map<String, dynamic> orderDataToDisplay = {};
+  List<Map<String, dynamic>> roolBackFromFilterData = [];
 
   double advancedPayment = 0.0;
   int discount = 0;
-
 
   String servicesPounce = '';
   String imageBefore = '';
@@ -69,12 +72,13 @@ class _ordersState extends State<orders> {
   bool dealerMode = false;
 
   /// when this mode is ON only the assiened employee will be able to accept the order
-  bool specifecEmployeeMode = false ;
+  bool specifecEmployeeMode = false;
 
   ////////So here the ends for the vars that we gonna send to data base //////////////////
 
   bool addNewOrderMode = false;
   bool isLoading = false;
+  bool showOrderDetailsMode = false;
 
   @override
   void initState() {
@@ -89,718 +93,1393 @@ class _ordersState extends State<orders> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      floatingActionButton: this.addNewOrderMode ?
-      Column(
-        mainAxisAlignment: MainAxisAlignment.end,
-        children: [
-          Tooltip(
-            message: 'trimite',
-            child: FloatingActionButton(
-              backgroundColor: Color(0xFF1ABC9C),
-              onPressed:addNewOrder,
-              child: Icon(
-                Icons.upload,
-                color: Colors.white,
-              ),
-            ),
-          ),
-          SizedBox(height: 20,),
-          Tooltip(
-            message: 'anula',
-            child: FloatingActionButton(
-              backgroundColor: Colors.red,
-              onPressed: ()  {
-               this.addNewOrderMode = false ;
-               setState(() {});
-              },
-              child: Icon(
-                Icons.cancel_outlined,
-                color: Colors.white,
-              ),
-            ),
-          )
-        ],
-      ):
-      FloatingActionButton(
-        backgroundColor: Color(0xFF1ABC9C),
-        onPressed: () async {
-          this.addNewOrderMode = true ;
-          setState(() {});
-        },
-        child: Icon(
-          Icons.add,
-          color: Colors.white,
-        ),
-      ),
-      body:this.addNewOrderMode ?
-      // this part will handel adding new orders to the database
-      Animate(
-        effects: [FadeEffect(duration: Duration(milliseconds: 900))],
-        child: (this.isLoading
-            ? staticVar.loading()
-            : Center(
-          child: Padding(
-            padding: const EdgeInsets.all(16.0),
-            child: SingleChildScrollView(
-                child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    crossAxisAlignment: CrossAxisAlignment.center,
+        floatingActionButton: this.isLoading
+            ? SizedBox.shrink()
+            : (this.showOrderDetailsMode
+                ? Column(
+                    mainAxisAlignment: MainAxisAlignment.end,
                     children: [
-                      Row(
+                      Tooltip(
+                        message: 'Plătește comanda',
+                        child: FloatingActionButton(
+                          backgroundColor: Colors.green,
+                          onPressed: upadtePaymentStatus,
+                          child: Icon(
+                            Icons.payment,
+                            color: Colors.white,
+                          ),
+                        ),
+                      ),
+                      SizedBox(
+                        height: 10,
+                      ),
+                      Tooltip(
+                        message: 'Anulează comanda',
+                        child: FloatingActionButton(
+                          backgroundColor: Colors.red,
+                          onPressed: cancelOrder,
+                          child: Icon(
+                            Icons.cancel,
+                            color: Colors.white,
+                          ),
+                        ),
+                      ),
+                      SizedBox(
+                        height: 10,
+                      ),
+                      Tooltip(
+                        message: 'Reveniți la ecranul de start',
+                        child: FloatingActionButton(
+                          backgroundColor: Colors.blue,
+                          onPressed: goBackToHomeScreen,
+                          child: Icon(
+                            Icons.arrow_back,
+                            color: Colors.white,
+                          ),
+                        ),
+                      ),
+                    ],
+                  )
+                : (this.addNewOrderMode
+                    ? Column(
+                        mainAxisAlignment: MainAxisAlignment.end,
                         children: [
-                          Text(
-                            "Detalii noi ale comenzii",
-                            style: TextStyle(
-                              fontSize: 36.0,
-                              fontWeight: FontWeight.bold,
-                              color: Color(0xFF1ABC9C),
+                          Tooltip(
+                            message: 'trimite',
+                            child: FloatingActionButton(
+                              backgroundColor: Color(0xFF1ABC9C),
+                              onPressed: addNewOrder,
+                              child: Icon(
+                                Icons.upload,
+                                color: Colors.white,
+                              ),
                             ),
                           ),
-                        ],
-                      ),
-                      SizedBox(
-                        height: 16,
-                      ),
-                      Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.start,
-                            children: [
-                              Text(
-                                'Mod dealer',
-                                style: TextStyle(
-                                  fontSize: 18.0,
-                                ),
-                              ),
-                              Switch(
-                                value: this.dealerMode,
-                                onChanged: (bool value) {
-                                  this.dealerID = "";
-                                  this.dealerName = "";
-                                  this.clientName = "";
-                                  this.clientEmail = "";
-                                  this.clientPhone = "";
-                                  this.cui = "";
-
-                                  setState(() {
-                                    this.dealerMode = value;
-                                  });
-                                },
-                                activeColor: Color(
-                                    0xFF1ABC9C), // color when switch is on
-                              ),
-                            ],
+                          SizedBox(
+                            height: 20,
                           ),
-                          Text(
-                            "Pentru a crea o comandă B2B, porniți acest comutator.",
-                            style:
-                            TextStyle(fontSize: 14.0, color: Colors.grey),
-                          ),
-                        ],
-                      ),
-                      Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.start,
-                            children: [
-                              Text(
-                                'modul angajat',
-                                style: TextStyle(
-                                  fontSize: 18.0,
-                                ),
-                              ),
-                              Switch(
-                                value:  this.specifecEmployeeMode ,
-                                onChanged: (bool value) {
-
-                                  setState(() {
-                                    this.specifecEmployeeMode = value;
-                                  });
-                                },
-                                activeColor: Color(
-                                    0xFF1ABC9C), // color when switch is on
-                              ),
-                            ],
-                          ),
-                          Text(
-                            "Când vei activa acest comutator, doar angajatul pe care l-ai semnat va accepta comanda.",
-                            style:
-                            TextStyle(fontSize: 14.0, color: Colors.grey),
-                          ),
-                        ],
-                      ),
-                      SizedBox(
-                        height: 26,
-                      ),
-                      Row(
-                        children: [
-                          this.dealerMode
-                              ? Container(
-                            width: staticVar.golobalWidth(context) * .32,
-                            child: DropdownButtonFormField2<String>(
-                              isExpanded: true,
-                              decoration: InputDecoration(
-                                contentPadding:
-                                const EdgeInsets.symmetric(
-                                    vertical: 16),
-                                border: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(15),
-                                ),
-                                // Add more decoration..
-                              ),
-                              hint: const Text(
-                                "Vă rog să selectați clientul.",
-                                style: TextStyle(fontSize: 14),
-                              ),
-                              items: this
-                                  .b2bfromFirebase
-                                  .map((item) => DropdownMenuItem<String>(
-                                value: json
-                                    .jsonEncode(item)
-                                    .toString(),
-                                child: Text(
-                                  item["B2BName"],
-                                  style: const TextStyle(
-                                    fontSize: 14,
-                                  ),
-                                ),
-                              ))
-                                  .toList(),
-                              onChanged: (value) {
-                                Map<String, dynamic> valueMap =
-                                json.jsonDecode(value ?? "");
-                                this.dealerID = valueMap["docId"];
-                                this.dealerName = valueMap["B2BName"];
-                                this.clientName = valueMap["B2BName"];
-                                this.clientEmail = valueMap["email"];
-                                this.clientPhone = valueMap["phoneNr"];
-                                this.cui =  valueMap['cui'];
+                          Tooltip(
+                            message: 'anula',
+                            child: FloatingActionButton(
+                              backgroundColor: Colors.red,
+                              onPressed: () {
+                                this.addNewOrderMode = false;
                                 setState(() {});
                               },
-                              buttonStyleData: const ButtonStyleData(
-                                padding: EdgeInsets.only(right: 8),
-                              ),
-                              iconStyleData: const IconStyleData(
-                                icon: Icon(
-                                  Icons.arrow_drop_down,
-                                  color: Colors.black45,
-                                ),
-                                iconSize: 24,
-                              ),
-                              dropdownStyleData: DropdownStyleData(
-                                decoration: BoxDecoration(
-                                  borderRadius: BorderRadius.circular(15),
-                                ),
-                              ),
-                              menuItemStyleData: const MenuItemStyleData(
-                                padding:
-                                EdgeInsets.symmetric(horizontal: 16),
+                              child: Icon(
+                                Icons.cancel_outlined,
+                                color: Colors.white,
                               ),
                             ),
                           )
-                              : Expanded(
-                            child: customTextFieldWidget(
-                              label: 'Nume Client *',
-                              // Text pentru eticheta
-                              hintText: 'Introduceți numele clientului',
-                              // Text pentru sugestie
-                              onChanged: (value) {
-                                setState(
-                                      () {
-                                    clientName = value;
-                                  },
-                                );
-                              },
-                            ),
-                          ),
-                          SizedBox(
-                              width: this.dealerMode
-                                  ? staticVar.golobalWidth(context) * .13
-                                  : 16.0),
-                          Expanded(
-                            child: customTextFieldWidget(
-                              dealerMode: this.dealerMode,
-                              dealerData: this.clientEmail,
-                              label: 'Email Client',
-                              hintText: 'client@example.com',
-                              onChanged: (value) {
-                                setState(() {
-                                  clientEmail = value;
-                                });
-                              },
-                            ),
-                          ),
                         ],
-                      ),
-                      SizedBox(height: 16.0),
-                      Row(
-                        children: [
-                          Expanded(
-                            child: customTextFieldWidget(
-                              isItNumerical: true,
-                              dealerMode: this.dealerMode,
-                              dealerData: this.clientPhone,
-                              label: 'Client Phone *',
-                              hintText: '0 777 888 999',
-                              onChanged: (value) {
-                                setState(() {
-                                  clientPhone = value;
-                                });
-                              },
-                              isItphoneNr: true, // Assuming phone number input
-                            ),
-                          ),
-                          SizedBox(width: 16.0),
-                          Expanded(
-                            child: customTextFieldWidget(
-                              label: 'Model mașină *',
-                              // Etichetă pentru modelul mașinii
-                              hintText: 'Introduceți modelul mașinii',
-                              // Sugestie pentru utilizato
-                              onChanged: (value) {
-                                setState(() {
-                                  carModel = value;
-                                });
-                              },
-                            ),
-                          ),
-                        ],
-                      ),
-                      Row(
-                        children: [
-                          this.dealerMode
-                              ? Expanded(
-                            child: customTextFieldWidget(
-                              dealerMode: this.dealerMode,
-                              dealerData: this.cui,
-                              label: 'CUI',
-                              hintText: 'client@example.com',
-                              onChanged: (value) {},
-                            ),
-                          )
-                              : Expanded(
-                            child: customTextFieldWidget(
-                              limit: 10,
-                              label: 'CUI',
-                              hintText: 'Enter CUI',
-                              onChanged: (value) {
-                                setState(() {
-                                  cui = value;
-                                });
-                              },
-                            ),
-                          ),
-                          SizedBox(width: 16.0),
-                          Expanded(
-                            child: customTextFieldWidget(
-                              isItNumerical : true ,
-                              isItDiscount: true,
-                              label: 'Discount',
-                              hintText: 'Enter Discount',
-                              suffex: "%",
-                              onChanged: (value) {
-                                setState(() {
-                                  discount = int.tryParse(value) ?? 0;
-                                });
-                              },
+                      )
+                    : FloatingActionButton(
+                        backgroundColor: Color(0xFF1ABC9C),
+                        onPressed: () async {
+                          this.addNewOrderMode = true;
+                          setState(() {});
+                        },
+                        child: Icon(
+                          Icons.add,
+                          color: Colors.white,
+                        ),
+                      ))),
+        body: this.isLoading
+            ? staticVar.loading()
+            :
 
+            // after loading show the orders
+            (this.addNewOrderMode
+                ?
+                // this part will handel adding new orders to the database
+                Animate(
+                    effects: [
+                      FadeEffect(duration: Duration(milliseconds: 900))
+                    ],
+                    child: (this.isLoading
+                        ? staticVar.loading()
+                        : Center(
+                            child: Padding(
+                              padding: const EdgeInsets.all(16.0),
+                              child: SingleChildScrollView(
+                                  child: Column(
+                                      mainAxisAlignment:
+                                          MainAxisAlignment.center,
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.center,
+                                      children: [
+                                    Row(
+                                      children: [
+                                        Text(
+                                          "Detalii noi ale comenzii",
+                                          style: TextStyle(
+                                            fontSize: 36.0,
+                                            fontWeight: FontWeight.bold,
+                                            color: Color(0xFF1ABC9C),
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                    SizedBox(
+                                      height: 16,
+                                    ),
+                                    Column(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
+                                      children: [
+                                        Row(
+                                          mainAxisAlignment:
+                                              MainAxisAlignment.start,
+                                          children: [
+                                            Text(
+                                              'Mod dealer',
+                                              style: TextStyle(
+                                                fontSize: 18.0,
+                                              ),
+                                            ),
+                                            Switch(
+                                              value: this.dealerMode,
+                                              onChanged: (bool value) {
+                                                this.dealerID = "";
+                                                this.dealerName = "";
+                                                this.clientName = "";
+                                                this.clientEmail = "";
+                                                this.clientPhone = "";
+                                                this.cui = "";
+
+                                                setState(() {
+                                                  this.dealerMode = value;
+                                                });
+                                              },
+                                              activeColor: Color(
+                                                  0xFF1ABC9C), // color when switch is on
+                                            ),
+                                          ],
+                                        ),
+                                        Text(
+                                          "Pentru a crea o comandă B2B, porniți acest comutator.",
+                                          style: TextStyle(
+                                              fontSize: 14.0,
+                                              color: Colors.grey),
+                                        ),
+                                      ],
+                                    ),
+                                    Column(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
+                                      children: [
+                                        Row(
+                                          mainAxisAlignment:
+                                              MainAxisAlignment.start,
+                                          children: [
+                                            Text(
+                                              'modul angajat',
+                                              style: TextStyle(
+                                                fontSize: 18.0,
+                                              ),
+                                            ),
+                                            Switch(
+                                              value: this.specifecEmployeeMode,
+                                              onChanged: (bool value) {
+                                                setState(() {
+                                                  this.specifecEmployeeMode =
+                                                      value;
+                                                });
+                                              },
+                                              activeColor: Color(
+                                                  0xFF1ABC9C), // color when switch is on
+                                            ),
+                                          ],
+                                        ),
+                                        Text(
+                                          "Când vei activa acest comutator, doar angajatul pe care l-ai semnat va accepta comanda.",
+                                          style: TextStyle(
+                                              fontSize: 14.0,
+                                              color: Colors.grey),
+                                        ),
+                                      ],
+                                    ),
+                                    SizedBox(
+                                      height: 26,
+                                    ),
+                                    Row(
+                                      children: [
+                                        this.dealerMode
+                                            ? Container(
+                                                width: staticVar
+                                                        .golobalWidth(context) *
+                                                    .32,
+                                                child: DropdownButtonFormField2<
+                                                    String>(
+                                                  isExpanded: true,
+                                                  decoration: InputDecoration(
+                                                    contentPadding:
+                                                        const EdgeInsets
+                                                            .symmetric(
+                                                            vertical: 16),
+                                                    border: OutlineInputBorder(
+                                                      borderRadius:
+                                                          BorderRadius.circular(
+                                                              15),
+                                                    ),
+                                                    // Add more decoration..
+                                                  ),
+                                                  hint: const Text(
+                                                    "Vă rog să selectați clientul.",
+                                                    style:
+                                                        TextStyle(fontSize: 14),
+                                                  ),
+                                                  items: this
+                                                      .b2bfromFirebase
+                                                      .map((item) =>
+                                                          DropdownMenuItem<
+                                                              String>(
+                                                            value: json
+                                                                .jsonEncode(
+                                                                    item)
+                                                                .toString(),
+                                                            child: Text(
+                                                              item["B2BName"],
+                                                              style:
+                                                                  const TextStyle(
+                                                                fontSize: 14,
+                                                              ),
+                                                            ),
+                                                          ))
+                                                      .toList(),
+                                                  onChanged: (value) {
+                                                    Map<String, dynamic>
+                                                        valueMap =
+                                                        json.jsonDecode(
+                                                            value ?? "");
+                                                    this.dealerID =
+                                                        valueMap["docId"];
+                                                    this.dealerName =
+                                                        valueMap["B2BName"];
+                                                    this.clientName =
+                                                        valueMap["B2BName"];
+                                                    this.clientEmail =
+                                                        valueMap["email"];
+                                                    this.clientPhone =
+                                                        valueMap["phoneNr"];
+                                                    this.cui = valueMap['cui'];
+                                                    setState(() {});
+                                                  },
+                                                  buttonStyleData:
+                                                      const ButtonStyleData(
+                                                    padding: EdgeInsets.only(
+                                                        right: 8),
+                                                  ),
+                                                  iconStyleData:
+                                                      const IconStyleData(
+                                                    icon: Icon(
+                                                      Icons.arrow_drop_down,
+                                                      color: Colors.black45,
+                                                    ),
+                                                    iconSize: 24,
+                                                  ),
+                                                  dropdownStyleData:
+                                                      DropdownStyleData(
+                                                    decoration: BoxDecoration(
+                                                      borderRadius:
+                                                          BorderRadius.circular(
+                                                              15),
+                                                    ),
+                                                  ),
+                                                  menuItemStyleData:
+                                                      const MenuItemStyleData(
+                                                    padding:
+                                                        EdgeInsets.symmetric(
+                                                            horizontal: 16),
+                                                  ),
+                                                ),
+                                              )
+                                            : Expanded(
+                                                child: customTextFieldWidget(
+                                                  label: 'Nume Client *',
+                                                  // Text pentru eticheta
+                                                  hintText:
+                                                      'Introduceți numele clientului',
+                                                  // Text pentru sugestie
+                                                  onChanged: (value) {
+                                                    setState(
+                                                      () {
+                                                        clientName = value;
+                                                      },
+                                                    );
+                                                  },
+                                                ),
+                                              ),
+                                        SizedBox(
+                                            width: this.dealerMode
+                                                ? staticVar
+                                                        .golobalWidth(context) *
+                                                    .13
+                                                : 16.0),
+                                        Expanded(
+                                          child: customTextFieldWidget(
+                                            dealerMode: this.dealerMode,
+                                            dealerData: this.clientEmail,
+                                            label: 'Email Client',
+                                            hintText: 'client@example.com',
+                                            onChanged: (value) {
+                                              setState(() {
+                                                clientEmail = value;
+                                              });
+                                            },
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                    SizedBox(height: 16.0),
+                                    Row(
+                                      children: [
+                                        Expanded(
+                                          child: customTextFieldWidget(
+                                            isItNumerical: true,
+                                            dealerMode: this.dealerMode,
+                                            dealerData: this.clientPhone,
+                                            label: 'Client Phone *',
+                                            hintText: '0 777 888 999',
+                                            onChanged: (value) {
+                                              setState(() {
+                                                clientPhone = value;
+                                              });
+                                            },
+                                            isItphoneNr:
+                                                true, // Assuming phone number input
+                                          ),
+                                        ),
+                                        SizedBox(width: 16.0),
+                                        Expanded(
+                                          child: customTextFieldWidget(
+                                            label: 'Model mașină *',
+                                            // Etichetă pentru modelul mașinii
+                                            hintText:
+                                                'Introduceți modelul mașinii',
+                                            // Sugestie pentru utilizato
+                                            onChanged: (value) {
+                                              setState(() {
+                                                carModel = value;
+                                              });
+                                            },
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                    Row(
+                                      children: [
+                                        this.dealerMode
+                                            ? Expanded(
+                                                child: customTextFieldWidget(
+                                                  dealerMode: this.dealerMode,
+                                                  dealerData: this.cui,
+                                                  label: 'CUI',
+                                                  hintText:
+                                                      'client@example.com',
+                                                  onChanged: (value) {},
+                                                ),
+                                              )
+                                            : Expanded(
+                                                child: customTextFieldWidget(
+                                                  limit: 10,
+                                                  label: 'CUI',
+                                                  hintText: 'Enter CUI',
+                                                  onChanged: (value) {
+                                                    setState(() {
+                                                      cui = value;
+                                                    });
+                                                  },
+                                                ),
+                                              ),
+                                        SizedBox(width: 16.0),
+                                        Expanded(
+                                          child: customTextFieldWidget(
+                                            isItNumerical: true,
+                                            isItDiscount: true,
+                                            label: 'Discount',
+                                            hintText: 'Enter Discount',
+                                            suffex: "%",
+                                            onChanged: (value) {
+                                              setState(() {
+                                                discount =
+                                                    int.tryParse(value) ?? 0;
+                                              });
+                                            },
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                    SizedBox(height: 16.0),
+                                    Row(
+                                      mainAxisAlignment:
+                                          MainAxisAlignment.spaceEvenly,
+                                      children: [
+                                        CustomDateTimePicker(
+                                            label: "program pentru.",
+                                            hintText: 'select the appotimeint ',
+                                            onChanged: (d) {
+                                              this.appointmentDate = d;
+                                            }),
+                                        SizedBox(
+                                            width: staticVar
+                                                    .golobalWidth(context) *
+                                                .13),
+                                        Expanded(
+                                          child: customTextFieldWidget(
+                                            label: 'Servicii oferite',
+                                            // Services Offered
+                                            hintText:
+                                                'Introduceți serviciile oferite',
+                                            // Enter Services Offered
+                                            onChanged: (value) {
+                                              setState(() {
+                                                servicesPounce = value;
+                                              });
+                                            },
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                    SizedBox(
+                                      height: 16.0,
+                                    ),
+                                    Row(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
+                                      children: [
+                                        Column(
+                                          children: [
+                                            // payment method
+                                            Container(
+                                              width: MediaQuery.of(context)
+                                                      .size
+                                                      .width *
+                                                  0.3,
+                                              child: DropdownButtonFormField2<
+                                                  String>(
+                                                isExpanded: true,
+                                                decoration: InputDecoration(
+                                                  label:
+                                                      Text("metoda de plată"),
+                                                  // Add Horizontal padding using menuItemStyleData.padding so it matches
+                                                  // the menu padding when button's width is not specified.
+                                                  contentPadding:
+                                                      const EdgeInsets
+                                                          .symmetric(
+                                                          vertical: 16),
+                                                  border: OutlineInputBorder(
+                                                    borderRadius:
+                                                        BorderRadius.circular(
+                                                            15),
+                                                  ),
+                                                  // Add more decoration..
+                                                ),
+                                                hint: const Text(
+                                                  'Selectați metoda de plată pentru acest client.',
+                                                  style:
+                                                      TextStyle(fontSize: 14),
+                                                ),
+                                                items: PaymentMethod.values
+                                                    .getRange(
+                                                        0,
+                                                        PaymentMethod
+                                                                .values.length -
+                                                            1)
+                                                    .map((item) =>
+                                                        DropdownMenuItem<
+                                                            String>(
+                                                          value:
+                                                              item.toString(),
+                                                          child: Text(
+                                                            item
+                                                                .toString()
+                                                                .split(".")
+                                                                .last,
+                                                            style:
+                                                                const TextStyle(
+                                                              fontSize: 14,
+                                                            ),
+                                                          ),
+                                                        ))
+                                                    .toList(),
+                                                onChanged: (value) {
+                                                  this.paymentMethod =
+                                                      parsePaymentMethodFromString(
+                                                          value ?? "");
+                                                  // print(this.paymentMethod);
+                                                  // print(this.paymentMethod.runtimeType);
+                                                  //Do something when selected item is changed.
+                                                },
+                                                buttonStyleData:
+                                                    const ButtonStyleData(
+                                                  padding:
+                                                      EdgeInsets.only(right: 8),
+                                                ),
+                                                iconStyleData:
+                                                    const IconStyleData(
+                                                  icon: Icon(
+                                                    Icons.arrow_drop_down,
+                                                    color: Colors.black45,
+                                                  ),
+                                                  iconSize: 24,
+                                                ),
+                                                dropdownStyleData:
+                                                    DropdownStyleData(
+                                                  decoration: BoxDecoration(
+                                                    borderRadius:
+                                                        BorderRadius.circular(
+                                                            15),
+                                                  ),
+                                                ),
+                                                menuItemStyleData:
+                                                    const MenuItemStyleData(
+                                                  padding: EdgeInsets.symmetric(
+                                                      horizontal: 16),
+                                                ),
+                                              ),
+                                            ),
+                                            //employee selection
+                                            SizedBox(
+                                              height: 16,
+                                            ),
+                                            Container(
+                                              width: MediaQuery.of(context)
+                                                      .size
+                                                      .width *
+                                                  0.3,
+                                              //  height: 100,
+                                              child: DropdownButtonFormField2<
+                                                  String>(
+                                                isExpanded: true,
+                                                decoration: InputDecoration(
+                                                  label: Text("Angajatul"),
+                                                  // Add Horizontal padding using menuItemStyleData.padding so it matches
+                                                  // the menu padding when button's width is not specified.
+                                                  contentPadding:
+                                                      const EdgeInsets
+                                                          .symmetric(
+                                                          vertical: 16),
+                                                  border: OutlineInputBorder(
+                                                    borderRadius:
+                                                        BorderRadius.circular(
+                                                            15),
+                                                  ),
+                                                  // Add more decoration..
+                                                ),
+                                                hint: const Text(
+                                                  "Vă rugăm să selectați angajatul care va fi responsabil pentru această comandă.",
+                                                  style:
+                                                      TextStyle(fontSize: 14),
+                                                ),
+                                                items: this
+                                                    .employeefromFirebase
+                                                    .map((item) =>
+                                                        DropdownMenuItem<
+                                                            String>(
+                                                          value: item["docId"],
+                                                          child: Text(
+                                                            item["empName"],
+                                                            style:
+                                                                const TextStyle(
+                                                              fontSize: 14,
+                                                            ),
+                                                          ),
+                                                        ))
+                                                    .toList(),
+                                                onChanged: (value) {
+                                                  if (value == null) {
+                                                    MyDialog.showAlert(
+                                                        context,
+                                                        "Ok",
+                                                        "Error when we try to get the employee ID while the user selecting the emp");
+                                                    throw Exception(
+                                                        "Error when we try to get the employee ID while the user selecting the emp");
+                                                  }
+                                                  this.empId = value;
+                                                  this.empName = this
+                                                      .employeefromFirebase
+                                                      .where((element) =>
+                                                          element["docId"] ==
+                                                          value)
+                                                      .first["empName"];
+                                                },
+                                                buttonStyleData:
+                                                    const ButtonStyleData(
+                                                  padding:
+                                                      EdgeInsets.only(right: 8),
+                                                ),
+                                                iconStyleData:
+                                                    const IconStyleData(
+                                                  icon: Icon(
+                                                    Icons.arrow_drop_down,
+                                                    color: Colors.black45,
+                                                  ),
+                                                  iconSize: 24,
+                                                ),
+                                                dropdownStyleData:
+                                                    DropdownStyleData(
+                                                  decoration: BoxDecoration(
+                                                    borderRadius:
+                                                        BorderRadius.circular(
+                                                            15),
+                                                  ),
+                                                ),
+                                                menuItemStyleData:
+                                                    const MenuItemStyleData(
+                                                  padding: EdgeInsets.symmetric(
+                                                      horizontal: 16),
+                                                ),
+                                              ),
+                                            ),
+                                            // payment status
+                                            SizedBox(
+                                              height: 16,
+                                            ),
+                                            Container(
+                                              width: MediaQuery.of(context)
+                                                      .size
+                                                      .width *
+                                                  0.3,
+                                              //  height: 100,
+                                              child: DropdownButtonFormField2<
+                                                  String>(
+                                                isExpanded: true,
+                                                decoration: InputDecoration(
+                                                  label:
+                                                      Text("statutul plății"),
+                                                  // Add Horizontal padding using menuItemStyleData.padding so it matches
+                                                  // the menu padding when button's width is not specified.
+                                                  contentPadding:
+                                                      const EdgeInsets
+                                                          .symmetric(
+                                                          vertical: 16),
+                                                  border: OutlineInputBorder(
+                                                    borderRadius:
+                                                        BorderRadius.circular(
+                                                            15),
+                                                  ),
+                                                  // Add more decoration..
+                                                ),
+                                                hint: const Text(
+                                                  "vă rugăm să selectați statutul plății pentru această comandă",
+                                                  style:
+                                                      TextStyle(fontSize: 14),
+                                                ),
+                                                items: PaymentStatus.values
+                                                    .getRange(
+                                                        0,
+                                                        PaymentStatus
+                                                                .values.length -
+                                                            1)
+                                                    .map((item) =>
+                                                        DropdownMenuItem<
+                                                            String>(
+                                                          value:
+                                                              item.toString(),
+                                                          child: Text(
+                                                            item
+                                                                .toString()
+                                                                .split(".")
+                                                                .last,
+                                                            style:
+                                                                const TextStyle(
+                                                              fontSize: 14,
+                                                            ),
+                                                          ),
+                                                        ))
+                                                    .toList(),
+                                                onChanged: (value) {
+                                                  this.paymentStatus =
+                                                      parsePaymentStatusFromString(
+                                                          value ?? "");
+                                                  if (this.paymentStatus !=
+                                                      PaymentStatus
+                                                          .partiallyPaid)
+                                                    this.advancedPayment = 0.0;
+                                                  setState(() {});
+                                                },
+                                                buttonStyleData:
+                                                    const ButtonStyleData(
+                                                  padding:
+                                                      EdgeInsets.only(right: 8),
+                                                ),
+                                                iconStyleData:
+                                                    const IconStyleData(
+                                                  icon: Icon(
+                                                    Icons.arrow_drop_down,
+                                                    color: Colors.black45,
+                                                  ),
+                                                  iconSize: 24,
+                                                ),
+                                                dropdownStyleData:
+                                                    DropdownStyleData(
+                                                  decoration: BoxDecoration(
+                                                    borderRadius:
+                                                        BorderRadius.circular(
+                                                            15),
+                                                  ),
+                                                ),
+                                                menuItemStyleData:
+                                                    const MenuItemStyleData(
+                                                  padding: EdgeInsets.symmetric(
+                                                      horizontal: 16),
+                                                ),
+                                              ),
+                                            ),
+                                            // this txt filed will handel the partially paid status
+                                            SizedBox(
+                                              height: 16,
+                                            ),
+                                            this.paymentStatus ==
+                                                    PaymentStatus.partiallyPaid
+                                                ? customTextFieldWidget(
+                                                    limit: 4,
+                                                    isItNumerical: true,
+                                                    label: "plată în avans",
+                                                    hintText: "... Ron",
+                                                    onChanged: (value) {
+                                                      double advancePayment =
+                                                          double.tryParse(
+                                                                  value) ??
+                                                              0.0;
+                                                      double totalPriceSummry =
+                                                          double.tryParse(
+                                                                  this.priceSummryDetails[
+                                                                          "totalWithVat"] ??
+                                                                      "0.0") ??
+                                                              0.0;
+                                                      if (advancePayment >=
+                                                          totalPriceSummry) {
+                                                        MyDialog.showAlert(
+                                                            context,
+                                                            "Ok",
+                                                            "Plata în avans pe care ați introdus-o este egală sau mai mare decât factura totală. Vă rugăm să vă asigurați că introduceți o plată în avans validă");
+                                                        advancePayment = 0.0;
+                                                      }
+                                                      this.advancedPayment =
+                                                          advancePayment;
+                                                      setState(() {});
+                                                    })
+                                                : SizedBox.shrink(),
+                                            // servises
+                                            SizedBox(
+                                              height: 16,
+                                            ),
+                                            Container(
+                                              width: MediaQuery.of(context)
+                                                      .size
+                                                      .width *
+                                                  0.3,
+                                              child: MultiSelectDropDown(
+                                                showChipInSingleSelectMode:
+                                                    true,
+                                                //   controller: _controller,
+                                                onOptionSelected: (options) {
+                                                  this.selectedServices =
+                                                      options.map((e) {
+                                                    return e.value
+                                                        as Map<String, dynamic>;
+                                                  }).toList();
+                                                  setState(() {});
+                                                  //debugPrint(options.first.value.toString());
+                                                },
+                                                options: this
+                                                    .servicesfromFirebase
+                                                    .map<ValueItem>((e) {
+                                                  //{price: 700,
+                                                  // addedAt: ,
+                                                  // serviceName: Detailing the exterior - medie,
+                                                  // isContract: true,
+                                                  // docId: 4Kg6bRfbfnLCm21CQlRw}
+
+                                                  String label = e["isContract"]
+                                                      ? e["serviceName"] +
+                                                          "--" +
+                                                          "B2B"
+                                                      : e["serviceName"];
+                                                  return ValueItem(
+                                                      label: label, value: e);
+                                                }).toList(),
+                                                maxItems: 5,
+                                                selectionType:
+                                                    SelectionType.multi,
+                                                chipConfig: const ChipConfig(
+                                                    wrapType: WrapType.wrap,
+                                                    backgroundColor:
+                                                        Color(0xFF1ABC9C)),
+                                                dropdownHeight: 300,
+                                                optionTextStyle:
+                                                    const TextStyle(
+                                                        fontSize: 16),
+                                                selectedOptionIcon: const Icon(
+                                                  Icons.check_circle,
+                                                  color: Color(0xFF1ABC9C),
+                                                ),
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                        SizedBox(
+                                          width:
+                                              staticVar.golobalWidth(context) *
+                                                  .12,
+                                        ),
+                                        Container(
+                                          width: MediaQuery.of(context)
+                                                  .size
+                                                  .width *
+                                              0.35,
+                                          height: staticVar
+                                                      .golobalHigth(context) *
+                                                  0.5 +
+                                              (this.selectedServices.length *
+                                                  15),
+                                          child: PriceSummaryCard(
+                                            advancePayment:
+                                                this.advancedPayment,
+                                            serviceList: this.selectedServices,
+                                            discount: this.discount.toDouble(),
+                                            dataSummary: (data) {
+                                              // Handle data from PriceSummaryCard here
+                                              this.priceSummryDetails = data;
+                                              // print('Price Summary Data:');
+                                              // print(data.runtimeType);
+                                              // print(data);
+                                            },
+                                          ),
+                                        )
+                                      ],
+                                    ),
+                                    SizedBox(
+                                      height: 500,
+                                    )
+                                  ])),
                             ),
-                          ),
-                        ],
-                      ),
-                      SizedBox(height: 16.0),
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                        children: [
-                          CustomDateTimePicker(
-                              label: "program pentru.",
-                              hintText: 'select the appotimeint ',
-                              onChanged: (d) {
-                                this.appointmentDate = d;
-                              }),
-                          SizedBox(
-                              width: staticVar.golobalWidth(context) * .13),
-                          Expanded(
-                            child: customTextFieldWidget(
-                              label: 'Servicii oferite',
-                              // Services Offered
-                              hintText: 'Introduceți serviciile oferite',
-                              // Enter Services Offered
-                              onChanged: (value) {
-                                setState(() {
-                                  servicesPounce = value;
-                                });
-                              },
-                            ),
-                          ),
-                        ],
-                      ),
-                      SizedBox(
-                        height: 16.0,
-                      ),
-                      Row(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Column(
+                          )),
+                  )
+                :
+                // this part will show all the oders
+                Animate(
+                    effects: [
+                      FadeEffect(duration: Duration(milliseconds: 1200))
+                    ],
+                    child: this.showOrderDetailsMode
+                        ? orderDetails(data: orderDataToDisplay)
+                        : Column(
+                            mainAxisAlignment: MainAxisAlignment.end,
                             children: [
-                              // payment method
-                              Container(
-                                width: MediaQuery.of(context).size.width * 0.3,
-                                child: DropdownButtonFormField2<String>(
-                                  isExpanded: true,
-                                  decoration: InputDecoration(
-                                    label: Text("metoda de plată"),
-                                    // Add Horizontal padding using menuItemStyleData.padding so it matches
-                                    // the menu padding when button's width is not specified.
-                                    contentPadding: const EdgeInsets.symmetric(
-                                        vertical: 16),
-                                    border: OutlineInputBorder(
-                                      borderRadius: BorderRadius.circular(15),
-                                    ),
-                                    // Add more decoration..
-                                  ),
-                                  hint: const Text(
-                                    'Selectați metoda de plată pentru acest client.',
-                                    style: TextStyle(fontSize: 14),
-                                  ),
-                                  items: PaymentMethod.values
-                                      .getRange(
-                                      0, PaymentMethod.values.length - 1)
-                                      .map((item) => DropdownMenuItem<String>(
-                                    value: item.toString(),
-                                    child: Text(
-                                      item.toString().split(".").last,
-                                      style: const TextStyle(
-                                        fontSize: 14,
-                                      ),
-                                    ),
-                                  ))
-                                      .toList(),
-                                  onChanged: (value) {
-                                    this.paymentMethod =
-                                        parsePaymentMethodFromString(
-                                            value ?? "");
-                                    // print(this.paymentMethod);
-                                    // print(this.paymentMethod.runtimeType);
-                                    //Do something when selected item is changed.
-                                  },
-                                  buttonStyleData: const ButtonStyleData(
-                                    padding: EdgeInsets.only(right: 8),
-                                  ),
-                                  iconStyleData: const IconStyleData(
-                                    icon: Icon(
-                                      Icons.arrow_drop_down,
-                                      color: Colors.black45,
-                                    ),
-                                    iconSize: 24,
-                                  ),
-                                  dropdownStyleData: DropdownStyleData(
-                                    decoration: BoxDecoration(
-                                      borderRadius: BorderRadius.circular(15),
-                                    ),
-                                  ),
-                                  menuItemStyleData: const MenuItemStyleData(
-                                    padding:
-                                    EdgeInsets.symmetric(horizontal: 16),
-                                  ),
-                                ),
-                              ),
-                              //employee selection
-                              SizedBox(
-                                height: 16,
-                              ),
-                              Container(
-                                width: MediaQuery.of(context).size.width * 0.3,
-                                //  height: 100,
-                                child: DropdownButtonFormField2<String>(
-                                  isExpanded: true,
-                                  decoration: InputDecoration(
-                                    label: Text("Angajatul"),
-                                    // Add Horizontal padding using menuItemStyleData.padding so it matches
-                                    // the menu padding when button's width is not specified.
-                                    contentPadding: const EdgeInsets.symmetric(
-                                        vertical: 16),
-                                    border: OutlineInputBorder(
-                                      borderRadius: BorderRadius.circular(15),
-                                    ),
-                                    // Add more decoration..
-                                  ),
-                                  hint: const Text(
-                                    "Vă rugăm să selectați angajatul care va fi responsabil pentru această comandă.",
-                                    style: TextStyle(fontSize: 14),
-                                  ),
-                                  items: this
-                                      .employeefromFirebase
-                                      .map((item) => DropdownMenuItem<String>(
-                                    value: item["docId"],
-                                    child: Text(
-                                      item["empName"],
-                                      style: const TextStyle(
-                                        fontSize: 14,
-                                      ),
-                                    ),
-                                  ))
-                                      .toList(),
-                                  onChanged: (value) {
-                                    if (value == null) {
-                                      MyDialog.showAlert(context, "Ok",
-                                          "Error when we try to get the employee ID while the user selecting the emp");
-                                      throw Exception(
-                                          "Error when we try to get the employee ID while the user selecting the emp");
-                                    }
-                                    this.empId = value;
-                                    this.empName = this
-                                        .employeefromFirebase
-                                        .where((element) =>
-                                    element["docId"] == value)
-                                        .first["empName"];
-                                  },
-                                  buttonStyleData: const ButtonStyleData(
-                                    padding: EdgeInsets.only(right: 8),
-                                  ),
-                                  iconStyleData: const IconStyleData(
-                                    icon: Icon(
-                                      Icons.arrow_drop_down,
-                                      color: Colors.black45,
-                                    ),
-                                    iconSize: 24,
-                                  ),
-                                  dropdownStyleData: DropdownStyleData(
-                                    decoration: BoxDecoration(
-                                      borderRadius: BorderRadius.circular(15),
-                                    ),
-                                  ),
-                                  menuItemStyleData: const MenuItemStyleData(
-                                    padding:
-                                    EdgeInsets.symmetric(horizontal: 16),
-                                  ),
-                                ),
-                              ),
-                              // payment status
-                              SizedBox(
-                                height: 16,
-                              ),
-                              Container(
-                                width: MediaQuery.of(context).size.width * 0.3,
-                                //  height: 100,
-                                child: DropdownButtonFormField2<String>(
-                                  isExpanded: true,
-                                  decoration: InputDecoration(
-                                    label: Text("statutul plății"),
-                                    // Add Horizontal padding using menuItemStyleData.padding so it matches
-                                    // the menu padding when button's width is not specified.
-                                    contentPadding: const EdgeInsets.symmetric(
-                                        vertical: 16),
-                                    border: OutlineInputBorder(
-                                      borderRadius: BorderRadius.circular(15),
-                                    ),
-                                    // Add more decoration..
-                                  ),
-                                  hint: const Text(
-                                    "vă rugăm să selectați statutul plății pentru această comandă",
-                                    style: TextStyle(fontSize: 14),
-                                  ),
-                                  items: PaymentStatus.values
-                                      .getRange(
-                                      0, PaymentStatus.values.length - 1)
-                                      .map((item) => DropdownMenuItem<String>(
-                                    value: item.toString(),
-                                    child: Text(
-                                      item.toString().split(".").last,
-                                      style: const TextStyle(
-                                        fontSize: 14,
-                                      ),
-                                    ),
-                                  ))
-                                      .toList(),
-                                  onChanged: (value) {
-                                    this.paymentStatus =
-                                        parsePaymentStatusFromString(
-                                            value ?? "");
-                                    if (this.paymentStatus !=
-                                        PaymentStatus.partiallyPaid)
-                                      this.advancedPayment = 0.0;
-                                    setState(() {});
-                                  },
-                                  buttonStyleData: const ButtonStyleData(
-                                    padding: EdgeInsets.only(right: 8),
-                                  ),
-                                  iconStyleData: const IconStyleData(
-                                    icon: Icon(
-                                      Icons.arrow_drop_down,
-                                      color: Colors.black45,
-                                    ),
-                                    iconSize: 24,
-                                  ),
-                                  dropdownStyleData: DropdownStyleData(
-                                    decoration: BoxDecoration(
-                                      borderRadius: BorderRadius.circular(15),
-                                    ),
-                                  ),
-                                  menuItemStyleData: const MenuItemStyleData(
-                                    padding:
-                                    EdgeInsets.symmetric(horizontal: 16),
-                                  ),
-                                ),
-                              ),
-                              // this txt filed will handel the partially paid status
-                              SizedBox(
-                                height: 16,
-                              ),
-                              this.paymentStatus == PaymentStatus.partiallyPaid
-                                  ? customTextFieldWidget(
-                                  limit: 4,
-                                  isItNumerical: true,
-                                  label: "plată în avans",
-                                  hintText: "... Ron",
-                                  onChanged: (value) {
-                                    double advancePayment =
-                                        double.tryParse(value) ?? 0.0;
-                                    double totalPriceSummry =
-                                        double.tryParse(
-                                            this.priceSummryDetails[
-                                            "totalWithVat"] ??
-                                                "0.0") ??
-                                            0.0;
-                                    if (advancePayment >=
-                                        totalPriceSummry) {
-                                      MyDialog.showAlert(context, "Ok",
-                                          "Plata în avans pe care ați introdus-o este egală sau mai mare decât factura totală. Vă rugăm să vă asigurați că introduceți o plată în avans validă");
-                                      advancePayment = 0.0;
-                                    }
-                                    this.advancedPayment = advancePayment;
-                                    setState(() {});
-                                  })
-                                  : SizedBox.shrink(),
-                              // servises
-                              SizedBox(
-                                height: 16,
-                              ),
-                              Container(
-                                width: MediaQuery.of(context).size.width * 0.3,
-                                child: MultiSelectDropDown(
-                                  showChipInSingleSelectMode: true,
-                                  //   controller: _controller,
-                                  onOptionSelected: (options) {
-                                    this.selectedServices = options.map((e) {
-                                      return e.value as Map<String, dynamic>;
-                                    }).toList();
-                                    setState(() {});
-                                    //debugPrint(options.first.value.toString());
-                                  },
-                                  options: this
-                                      .servicesfromFirebase
-                                      .map<ValueItem>((e) {
-                                    //{price: 700,
-                                    // addedAt: ,
-                                    // serviceName: Detailing the exterior - medie,
-                                    // isContract: true,
-                                    // docId: 4Kg6bRfbfnLCm21CQlRw}
+                              /// this row gonna handel the filters
+                              Row(
+                                children: [
+                                  Button(
+                                      onTap: () {
+                                        this.ordersfromFirebase = roolBackFromFilterData ;
+                                        setState(() {});
+                                      },
+                                      text: "Resetati " ),
+                                  Padding(
+                                    padding: const EdgeInsets.all(8.0),
+                                    child: Container(
+                                      width: MediaQuery.of(context).size.width *
+                                          0.2,
+                                      //  height: 100,
+                                      child: DropdownButtonFormField2<String>(
+                                        isExpanded: true,
+                                        decoration: InputDecoration(
+                                          label: Text("Angajatul"),
+                                          // Add Horizontal padding using menuItemStyleData.padding so it matches
+                                          // the menu padding when button's width is not specified.
+                                          contentPadding:
+                                              const EdgeInsets.symmetric(
+                                                  vertical: 16),
+                                          border: OutlineInputBorder(
+                                            borderRadius:
+                                                BorderRadius.circular(15),
+                                          ),
+                                          // Add more decoration..
+                                        ),
+                                        hint: const Text(
+                                          "Filtrează comenzile în funcție de angajat.",
+                                          style: TextStyle(fontSize: 14),
+                                        ),
+                                        items: this
+                                            .employeefromFirebase
+                                            .map((item) =>
+                                                DropdownMenuItem<String>(
+                                                  value: item["docId"],
+                                                  child: Text(
+                                                    item["empName"],
+                                                    style: const TextStyle(
+                                                      fontSize: 14,
+                                                    ),
+                                                  ),
+                                                ))
+                                            .toList(),
+                                        onChanged: (value) {
+                                          dynamic x  = filterByEmployeeID(orders: this.ordersfromFirebase, empId: value ?? "");
+                                          this.ordersfromFirebase =x ;
+                                          setState(() {});
 
-                                    String label = e["isContract"]
-                                        ? e["serviceName"] + "--" + "B2B"
-                                        : e["serviceName"];
-                                    return ValueItem(label: label, value: e);
-                                  }).toList(),
-                                  maxItems: 5,
-                                  selectionType: SelectionType.multi,
-                                  chipConfig: const ChipConfig(
-                                      wrapType: WrapType.wrap,
-                                      backgroundColor: Color(0xFF1ABC9C)),
-                                  dropdownHeight: 300,
-                                  optionTextStyle:
-                                  const TextStyle(fontSize: 16),
-                                  selectedOptionIcon: const Icon(
-                                    Icons.check_circle,
-                                    color: Color(0xFF1ABC9C),
+                                        },
+                                        buttonStyleData: const ButtonStyleData(
+                                          padding: EdgeInsets.only(right: 8),
+                                        ),
+                                        iconStyleData: const IconStyleData(
+                                          icon: Icon(
+                                            Icons.arrow_drop_down,
+                                            color: Colors.black45,
+                                          ),
+                                          iconSize: 24,
+                                        ),
+                                        dropdownStyleData: DropdownStyleData(
+                                          decoration: BoxDecoration(
+                                            borderRadius:
+                                                BorderRadius.circular(15),
+                                          ),
+                                        ),
+                                        menuItemStyleData:
+                                            const MenuItemStyleData(
+                                          padding: EdgeInsets.symmetric(
+                                              horizontal: 16),
+                                        ),
+                                      ),
+                                    ),
                                   ),
-                                ),
+
+                                ],
                               ),
+                              Container(
+                                  width: staticVar.golobalWidth(context),
+                                  height: staticVar.fullhigth(context) * .9,
+                                  decoration: BoxDecoration(
+                                      //    border: Border.all(color: Colors.black.withOpacity(.33)),
+                                      borderRadius: BorderRadius.circular(10),
+                                      color: Colors.white),
+                                  child: Card(
+                                      elevation: 1,
+                                      child: Center(
+                                        child: DataTable2(
+                                            columnSpacing: 5,
+                                            columns: [
+                                              staticVar.Dc("Model de mașină"),
+                                              staticVar.Dc("statusul plății"),
+                                              staticVar.Dc("statusul comenzii"),
+                                              staticVar.Dc("data adăugată"),
+                                              staticVar.Dc("programare")
+                                            ],
+                                            rows: this
+                                                .ordersfromFirebase
+                                                .map((e) {
+                                              String carModeMap =
+                                                  e["carModel"] ??
+                                                      "404Notfound";
+                                              String paymentStatusMap =
+                                                  e["paymentStatus"] ??
+                                                      "404Notfound";
+                                              String orderStatusMap =
+                                                  e["status"] ?? "404Notfound";
+                                              String addedDate = staticVar
+                                                      .formatDateFromTimestamp(
+                                                          e["issuedDate"]) ??
+                                                  "404Notfound";
+                                              String appotimentMap = staticVar
+                                                      .formatDateFromTimestamp(e[
+                                                          "appointmentDate"]) ??
+                                                  "404Notfound";
+
+                                              return DataRow2(
+                                                  onTap: () {
+                                                    this.orderDataToDisplay =
+                                                        e ?? {};
+                                                    this.showOrderDetailsMode =
+                                                        true;
+                                                    setState(() {});
+                                                  },
+                                                  cells: [
+                                                    DataCell(Center(
+                                                        child:
+                                                            Text(carModeMap))),
+                                                    DataCell(Center(
+                                                        child: staticVar
+                                                            .getPaymentStatusWidget(
+                                                                status2:
+                                                                    paymentStatusMap))),
+                                                    DataCell(Center(
+                                                        child: staticVar
+                                                            .getOrderStatusWidget(
+                                                                status2:
+                                                                    orderStatusMap))),
+                                                    DataCell(Center(
+                                                        child:
+                                                            Text(addedDate))),
+                                                    DataCell(Center(
+                                                        child: Text(
+                                                            appotimentMap))),
+                                                  ]);
+                                            }).toList()),
+                                      ))),
                             ],
                           ),
-                          SizedBox(
-                            width: staticVar.golobalWidth(context) * .12,
-                          ),
-                          Container(
-                            width: MediaQuery.of(context).size.width * 0.35,
-                            height: staticVar.golobalHigth(context) * 0.5 +
-                                (this.selectedServices.length * 15),
-                            child: PriceSummaryCard(
-                              advancePayment: this.advancedPayment,
-                              serviceList: this.selectedServices,
-                              discount: this.discount.toDouble(),
-                              dataSummary: (data) {
-                                // Handle data from PriceSummaryCard here
-                                this.priceSummryDetails = data;
-                                // print('Price Summary Data:');
-                                // print(data.runtimeType);
-                                // print(data);
-                              },
-                            ),
-                          )
-                        ],
-                      ),
-                      SizedBox(
-                        height: 500,
-                      )
-                    ])),
-          ),
-        )),
-      ) :
-          // this part will show all the oders
-      Animate(
-        effects: [
-          FadeEffect(duration: Duration(milliseconds: 1200))
-        ],
-        child: Center(
-          child: Container(
-              width: staticVar.golobalWidth(context),
-              height: staticVar.golobalHigth(context),
-              decoration: BoxDecoration(
-                //    border: Border.all(color: Colors.black.withOpacity(.33)),
-                  borderRadius: BorderRadius.circular(10),
-                  color: Colors.white),
-              child: Card(
-                  elevation: 1,
-                  child: Center(
-                    child: DataTable2(
-                      columnSpacing: 5,
-                      columns: [
-                        staticVar.Dc("Model de mașină"),
-                        staticVar.Dc("statusul plății"),
-                        staticVar.Dc("statusul comenzii"),
-                        staticVar.Dc("data adăugată"),
-                        staticVar.Dc("programare")
-                      ],
-                      rows: this.ordersfromFirebase.map((e) {
-                        String carModeMap = e["carModel"]?? "404Notfound";
-                        String paymentStatusMap = e["paymentStatus"]?? "404Notfound";
-                        String orderStatusMap = e["status"]?? "404Notfound";
-                        String addedDate = staticVar.formatDateFromTimestamp(e["issuedDate"])?? "404Notfound";
-                        String appotimentMap = staticVar.formatDateFromTimestamp(e["appointmentDate"])?? "404Notfound";
+                  )));
+  }
 
-                        return DataRow(cells: [
-                          DataCell(Center(child:  Text(carModeMap))),
-                          DataCell(Center(child:  staticVar.getPaymentStatusWidget(status2: paymentStatusMap))),
-                          DataCell(Center(child:  staticVar.getOrderStatusWidget(status2: orderStatusMap))),
-                          DataCell(Center(child:  Text(addedDate))),
-                          DataCell(Center(child:  Text(appotimentMap))),
-                        ]);
-                      }).toList()
-                    ),
-                  ))),
-        ),
-      ),
+  /// this function gonna handel the filter by date range
+  List<Map<String, dynamic>> filterByDateRange(
+      {required List<Map<String, dynamic>> orders,
+      required DateTime startDate,
+      required DateTime endDate}) {
+    return orders.where((order) {
+      DateTime appointmentDate = order['appointmentDate'];
+      bool isWithinDateRange = appointmentDate.isAfter(startDate) &&
+          appointmentDate.isBefore(endDate);
+
+      return isWithinDateRange;
+    }).toList();
+  }
+
+  /// this function gonna handel the filter by employee name
+  List<Map<String, dynamic>> filterByEmployeeID(
+      {required List<Map<String, dynamic>> orders, required String empId}) {
+    return orders.where((order) {
+      String employeeName = order['empId'];
+      bool isMatchingEmployee = employeeName == empId;
+      return isMatchingEmployee;
+    }).toList();
+  }
+
+  /// this funciton will handel the payment status .... it will flip it to paid in case all the condtions are met
+  Future<void> upadtePaymentStatus() async {
+    /// this funciton will change the payment status to paid if these 2 cases are met
+    /// 1. the orders is on pending or inProgress status
+    /// 2. the paymetn status is unpaid or partchlly paid
+    /// otherwise it will return
+    String orderStatusVar = this.orderDataToDisplay['status'];
+    String paymentStatus = orderDataToDisplay['paymentStatus'];
+    String docId = orderDataToDisplay["docId"] ?? "";
+    double advancePayment = orderDataToDisplay['advancedPayment'].toDouble();
+    double totalPrice = double.tryParse(orderDataToDisplay['priceSummryDetails']
+                ['totalWithVat'] ??
+            "0.0") ??
+        0.0;
+
+    /// check that the order is not completed NOR canceled
+    if (orderStatusVar == orderStatus.pending.toString() ||
+        orderStatusVar == orderStatus.inProgress.toString()) {
+      // handel the unpaid senario
+      if (paymentStatus == PaymentStatus.unpaid.toString()) {
+        showDialog(
+          context: context,
+          builder: (BuildContext context) {
+            return AlertDialog(
+              backgroundColor: Colors.grey[850],
+              title:
+                  Text('Payment Status', style: TextStyle(color: Colors.white)),
+              content: Text(
+                  "You are now about to change the payment status of this order. Please make sure to receive $totalPrice RON from the client.",
+                  style: TextStyle(color: Colors.white)),
+              actions: <Widget>[
+                TextButton(
+                  child: Text('Cancel', style: TextStyle(color: Colors.white)),
+                  onPressed: () {
+                    Navigator.of(context).pop();
+                  },
+                ),
+                TextButton(
+                  child: Text('Proceed', style: TextStyle(color: Colors.white)),
+                  onPressed: () async {
+                    print('update from unpaid ');
+                    // Add logic to proceed with cancellation here
+                    Navigator.of(context).pop();
+                    await updatepaymentStatusToPaid(orderId: docId);
+                  },
+                ),
+              ],
+            );
+          },
+        );
+        return;
+      }
+
+      // handel the advanced paid senario
+      if (paymentStatus == PaymentStatus.partiallyPaid.toString()) {
+        showDialog(
+          context: context,
+          builder: (BuildContext context) {
+            return AlertDialog(
+              backgroundColor: Colors.grey[850],
+              title:
+                  Text('Payment Status', style: TextStyle(color: Colors.white)),
+              content: Text(
+                  "You are now about to change the payment status of this order. Please make sure to receive ${totalPrice - advancePayment} RON from the client.",
+                  style: TextStyle(color: Colors.white)),
+              actions: <Widget>[
+                TextButton(
+                  child: Text('Cancel', style: TextStyle(color: Colors.white)),
+                  onPressed: () {
+                    Navigator.of(context).pop();
+                  },
+                ),
+                TextButton(
+                  child: Text('Proceed', style: TextStyle(color: Colors.white)),
+                  onPressed: () async {
+                    print("updatd from adfavace paymetn ");
+                    // Add logic to proceed with cancellation here
+                    Navigator.of(context).pop();
+                    await updatepaymentStatusToPaid(orderId: docId);
+                  },
+                ),
+              ],
+            );
+          },
+        );
+        return;
+      }
+    }
+
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          backgroundColor: Colors.grey[850],
+          title: Text('Can\'t change the payment status',
+              style: TextStyle(color: Colors.white)),
+          content: Text(
+              "The order you chose is either already paid, canceled, or completed.",
+              style: TextStyle(color: Colors.white)),
+          actions: <Widget>[
+            TextButton(
+              child: Text('Ok', style: TextStyle(color: Colors.white)),
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+            ),
+          ],
+        );
+      },
     );
+  }
+
+  /// to avoid the complexity i split the code , this function will flip the payment status  to paid
+  Future<void> updatepaymentStatusToPaid({required String orderId}) async {
+    try {
+      this.isLoading = true;
+      setState(() {});
+      // Get reference to the document
+      DocumentReference orderRef =
+          FirebaseFirestore.instance.collection('orders').doc(orderId);
+
+      // Update the status field of the document to 'canceled'
+      await orderRef.update({'paymentStatus': PaymentStatus.paid.toString()});
+      staticVar.showSubscriptionSnackbar(
+          context: context, msg: "Starea plății a fost actualizată cu succes.");
+      this.ordersFromFirrbase();
+      this.showOrderDetailsMode = false;
+      this.isLoading = false;
+      setState(() {});
+    } catch (e) {
+      print('Error updating order status: $e');
+      MyDialog.showAlert(context, "Ok", 'Error updating order status: $e');
+      // Handle error as needed
+    }
+  }
+
+  /// simple funciton the cancel the current order
+  Future<void> cancelOrder() async {
+    try {
+      /// This function will return these cases
+      /// 1. the order is already canceled or completed
+      /// In case the client what was paid or half paid it will shows the proper msg
+      String status = this.orderDataToDisplay['status'];
+      String paymentStatus = orderDataToDisplay['paymentStatus'];
+      double totalPrice = double.tryParse(
+              orderDataToDisplay['priceSummryDetails']['totalWithVat'] ??
+                  "0.0") ??
+          0.0;
+      int advancePayment =
+          int.tryParse(orderDataToDisplay['advancedPayment'].toString()) ?? 0;
+      String docId = orderDataToDisplay["docId"] ?? "";
+
+      /// 1. if the order is canceld or completed return
+      if (status == orderStatus.canceled.toString() ||
+          status == orderStatus.completed.toString()) {
+        String message = status == orderStatus.canceled
+            ? 'You can\'t cancel this order becuase its already been canceled.'
+            : 'You can\'t cancel this order becuase its its already completed.';
+        showDialog(
+          context: context,
+          builder: (BuildContext context) {
+            return AlertDialog(
+              backgroundColor: Colors.grey[850],
+              title: Text(
+                'Cancellation Warning',
+                style: TextStyle(color: Colors.white),
+              ),
+              content: Text(
+                message,
+                style: TextStyle(color: Colors.white),
+              ),
+              actions: <Widget>[
+                TextButton(
+                  child: Text(
+                    'OK',
+                    style: TextStyle(color: Colors.white),
+                  ),
+                  onPressed: () {
+                    Navigator.of(context).pop();
+                  },
+                ),
+              ],
+            );
+          },
+        );
+        return;
+      }
+
+      /// if the client paid notify the user about it before cancelling
+      if (paymentStatus == PaymentStatus.paid.toString()) {
+        showDialog(
+          context: context,
+          builder: (BuildContext context) {
+            return AlertDialog(
+              backgroundColor: Colors.grey[850],
+              title:
+                  Text('Payment Status', style: TextStyle(color: Colors.white)),
+              content: Text(
+                  'The client has paid ${totalPrice.toStringAsFixed(2)} RON. Are you sure you want to proceed?',
+                  style: TextStyle(color: Colors.white)),
+              actions: <Widget>[
+                TextButton(
+                  child: Text('Cancel', style: TextStyle(color: Colors.white)),
+                  onPressed: () {
+                    Navigator.of(context).pop();
+                  },
+                ),
+                TextButton(
+                  child: Text('Proceed', style: TextStyle(color: Colors.white)),
+                  onPressed: () async {
+                    // Add logic to proceed with cancellation here
+                    Navigator.of(context).pop();
+                    await updateOrderStatusToCancel(orderId: docId);
+                    // Navigator.of(context).pop(); // Close the dialog
+                    // Perform cancellation logic
+                  },
+                ),
+              ],
+            );
+          },
+        );
+        return;
+      }
+
+      /// if the clint made advance payment make sure to notify the user about it
+      if (paymentStatus == PaymentStatus.partiallyPaid.toString()) {
+        showDialog(
+          context: context,
+          builder: (BuildContext context) {
+            return AlertDialog(
+              backgroundColor: Colors.grey[850],
+              title:
+                  Text('Payment Status', style: TextStyle(color: Colors.white)),
+              content: Text(
+                  'The client gave you and advance payment  ${advancePayment} RON. Are you sure you want to proceed?',
+                  style: TextStyle(color: Colors.white)),
+              actions: <Widget>[
+                TextButton(
+                  child: Text('Cancel', style: TextStyle(color: Colors.white)),
+                  onPressed: () {
+                    Navigator.of(context).pop();
+                  },
+                ),
+                TextButton(
+                  child: Text('Proceed', style: TextStyle(color: Colors.white)),
+                  onPressed: () async {
+                    // Add logic to proceed with cancellation here
+                    Navigator.of(context).pop();
+                    await updateOrderStatusToCancel(orderId: docId);
+                    //   Navigator.of(context).pop(); // Close the dialog
+                    // Perform cancellation logic
+                  },
+                ),
+              ],
+            );
+          },
+        );
+        return;
+      } else {
+        // Handle other cases as needed
+        showDialog(
+          context: context,
+          builder: (BuildContext context) {
+            return AlertDialog(
+              title: Text('Cancellation Warning'),
+              content: Text('Are you sure you want to cancel this order ? '),
+              actions: <Widget>[
+                TextButton(
+                  child: Text('Go back'),
+                  onPressed: () {
+                    Navigator.of(context).pop();
+                  },
+                ),
+                TextButton(
+                  child: Text('yes '),
+                  onPressed: () async {
+                    Navigator.of(context).pop();
+                    await updateOrderStatusToCancel(orderId: docId);
+                    //   Navigator.of(context).pop();
+                  },
+                ),
+              ],
+            );
+          },
+        );
+      }
+
+      return;
+    } catch (e) {
+      MyDialog.showAlert(context, "Ok", "error $e");
+      this.isLoading = false;
+      setState(() {});
+    }
+  }
+
+  /// to avoid the complexity i split the code , this funciton will flip the status to canceld
+  Future<void> updateOrderStatusToCancel({required String orderId}) async {
+    try {
+      this.isLoading = true;
+      setState(() {});
+      // Get reference to the document
+      DocumentReference orderRef =
+          FirebaseFirestore.instance.collection('orders').doc(orderId);
+
+      // Update the status field of the document to 'canceled'
+      await orderRef.update({'status': orderStatus.canceled.toString()});
+      staticVar.showSubscriptionSnackbar(
+          context: context, msg: "Comanda a fost anulată cu succes.");
+      this.ordersFromFirrbase();
+      this.showOrderDetailsMode = false;
+      this.isLoading = false;
+      setState(() {});
+    } catch (e) {
+      print('Error updating order status: $e');
+      MyDialog.showAlert(context, "Ok", 'Error updating order status: $e');
+      // Handle error as needed
+    }
+  }
+
+  /// simple function to go back from order details to home order page
+  void goBackToHomeScreen() {
+    this.showOrderDetailsMode = false;
+    setState(() {});
   }
 
   /// this function is going to insert new order in the Database
   Future<void> addNewOrder() async {
-    try{
-      this.isLoading = true ;
+    try {
+      this.isLoading = true;
       setState(() {});
+
       /// check the mandetory inputs
 
       /// Check the name validity
@@ -814,7 +1493,8 @@ class _ordersState extends State<orders> {
       /// the email is not mandetory
 
       /// check the phone validity
-      if (this.clientPhone.trim() == "" || this.clientPhone.trim().length < 10) {
+      if (this.clientPhone.trim() == "" ||
+          this.clientPhone.trim().length < 10) {
         String msg =
             "Vă rugăm să introduceți un număr de telefon valid, care să aibă 10 caractere.";
         MyDialog.showAlert(context, "Ok ", msg);
@@ -835,7 +1515,8 @@ class _ordersState extends State<orders> {
 
       /// check if if the user choose payment method
       if (this.paymentMethod == PaymentMethod.init) {
-        String msg = "Vă rugăm să selectați metoda de plată și încercați din nou";
+        String msg =
+            "Vă rugăm să selectați metoda de plată și încercați din nou";
         MyDialog.showAlert(context, "Ok ", msg);
         return;
       }
@@ -897,10 +1578,10 @@ class _ordersState extends State<orders> {
         'clientPhone': this.clientPhone,
         'carModel': this.carModel,
         'issuedDate': DateTime.now(),
-        'entranceDate': null ,
+        'entranceDate': null,
         'appointmentDate': this.appointmentDate,
-        'finishedDate': null ,
-        'expectedFinishingDate' : this.appointmentDate.add(Duration(days: 5)) ,
+        'finishedDate': null,
+        'expectedFinishingDate': this.appointmentDate.add(Duration(days: 5)),
         'status': status.toString(),
         'paymentStatus': this.paymentStatus.toString(),
         'paymentMethod': this.paymentMethod.toString(),
@@ -909,54 +1590,44 @@ class _ordersState extends State<orders> {
         'priceSummryDetails': this.priceSummryDetails,
         'advancedPayment': this.advancedPayment,
         'discount': this.discount,
-        'createdBy': user?.email ,
+        'createdBy': user?.email,
         'servicesPounce': this.servicesPounce,
         'imageBefore': "",
         'imageAfter': "",
         'lock': lock,
         'empId': this.empId,
         'empName': this.empName,
-        'empAcceptanceTimestamp': null ,
-        'completionTimestamp': null ,
+        'empAcceptanceTimestamp': null,
+        'completionTimestamp': null,
         'billUrl': "",
         'dealerName': this.dealerName,
         'dealerID': this.dealerID,
         'dealerMode': this.dealerMode,
-        'specifecEmployeeMode' : this.specifecEmployeeMode
+        'specifecEmployeeMode': this.specifecEmployeeMode
       };
 
       final FirebaseFirestore firestore = FirebaseFirestore.instance;
       await firestore.collection('orders').add(orderData);
-      staticVar.showSubscriptionSnackbar(context: context, msg: "Comanda a fost adăugată cu succes.");
+      staticVar.showSubscriptionSnackbar(
+          context: context, msg: "Comanda a fost adăugată cu succes.");
       ordersFromFirrbase();
-      this.isLoading = false ;
-      this.addNewOrderMode = false ;
+      this.isLoading = false;
+      this.addNewOrderMode = false;
       setState(() {});
-
-
 
       /// test the data before send
       // for (var i in orderData.keys ){
       //   print(i.toString() + " " + orderData[i].toString());
       //
       // }
-
-    }
-
-    catch (e){
-
+    } catch (e) {
       MyDialog.showAlert(context, "Ok", "Error adding order: $e");
-      this.isLoading = false  ;
+      this.isLoading = false;
       setState(() {});
-
-    }
-    finally{
-      this.isLoading = false  ;
+    } finally {
+      this.isLoading = false;
       setState(() {});
-
     }
-
-
   }
 
   // this fucniotn gonna parse the selected string item back to Emum
@@ -997,8 +1668,10 @@ class _ordersState extends State<orders> {
 
     try {
       // Get all documents from the 'services' collection
-      QuerySnapshot querySnapshot =
-          await firestore.collection('services').orderBy('addedAt', descending: true).get();
+      QuerySnapshot querySnapshot = await firestore
+          .collection('services')
+          .orderBy('addedAt', descending: true)
+          .get();
 
       // Loop through the documents snapshot
       querySnapshot.docs.forEach((doc) {
@@ -1113,8 +1786,10 @@ class _ordersState extends State<orders> {
 
     try {
       // Get all documents from the 'services' collection
-      QuerySnapshot querySnapshot =
-      await firestore.collection('orders').orderBy('issuedDate', descending: true).get();
+      QuerySnapshot querySnapshot = await firestore
+          .collection('orders')
+          .orderBy('issuedDate', descending: true)
+          .get();
 
       // Loop through the documents snapshot
       querySnapshot.docs.forEach((doc) {
@@ -1129,6 +1804,7 @@ class _ordersState extends State<orders> {
       });
 
       this.ordersfromFirebase = ordersList;
+      this.roolBackFromFilterData = ordersList;
       print(this.ordersfromFirebase);
       this.isLoading = false;
       setState(() {});
@@ -1140,4 +1816,6 @@ class _ordersState extends State<orders> {
     }
   }
 
+
 }
+

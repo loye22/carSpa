@@ -1,3 +1,4 @@
+import 'package:car_spa/widgets/EmployeeNameCard.dart';
 import 'package:car_spa/widgets/button.dart';
 import 'package:car_spa/widgets/confirmationDialog.dart';
 import 'package:car_spa/widgets/customTextFieldWidget.dart';
@@ -20,12 +21,17 @@ class _employeePageState extends State<employeePage> {
   bool addNewEmpMode = false;
   bool isLoading = false;
   bool editMode = false;
+  bool empDetailsMode = false ;
+
 
   String employeeName = "";
   String percentage = "";
   String phoneNr = "" ;
 
   List<Map<String, dynamic>> emplyeeDataFromFirebase = [];
+  List<Map<String, dynamic>> ordersfromFirebase = [];
+  List<Map<String, dynamic>> ordersfromFirebaseFilterdByEmpId = [];
+  Map<String, dynamic> empDetails = {} ;
 
   Map<String,dynamic> editDataMode = {};
 
@@ -33,12 +39,97 @@ class _employeePageState extends State<employeePage> {
   void initState() {
     // TODO: implement initState
     super.initState();
+    ordersFromFirrbase();
     fetchServices();
   }
 
   @override
   Widget build(BuildContext context) {
-    return Animate(
+    return this.empDetailsMode ?
+    /// the emplyee detals scren
+    Animate(
+      effects: [FadeEffect(duration: Duration(milliseconds: 900))],
+      child: Scaffold(
+        floatingActionButton:   Tooltip(
+          message: 'Reveniți la ecranul de start',
+          child: Animate(
+            effects: [SlideEffect(begin: Offset(5, 0))],
+            child: FloatingActionButton(
+              backgroundColor: Color(0xFF1ABC9C),
+              onPressed: goBackToHomeScreen,
+              child: Icon(
+                Icons.arrow_back,
+                color: Colors.white,
+              ),
+            ),
+          ),
+        ),
+        body:Column(
+          mainAxisAlignment: MainAxisAlignment.end,
+          children: [
+            Row(
+              children: [
+                EmployeeNameCard(name: this.empDetails["empName"] ?? "404Notfound"),
+              ],
+            ),
+            Padding(
+              padding: const EdgeInsets.all(8.0),
+              child: Container(
+                  width: staticVar.golobalWidth(context) ,
+                  height: staticVar.golobalHigth(context) * .9,
+                  decoration: BoxDecoration(
+                    //    border: Border.all(color: Colors.black.withOpacity(.33)),
+                      borderRadius: BorderRadius.circular(10),
+                      color: Colors.white),
+                  child: Card(
+                      elevation: 1,
+                      child: Center(
+                        child: DataTable2(
+                          columnSpacing: 5,
+                          columns: [
+                            staticVar.Dc("Modelul mașinii"),
+                            staticVar.Dc("Data programării"),
+                            staticVar.Dc("Data intrării"),
+                            staticVar.Dc("Preț total cu TVA"),
+                            staticVar.Dc("Servicii"),
+
+
+
+                          ],
+                          rows: this.ordersfromFirebase.where((ele) => ele["empId"] == this.empDetails["docId"] ).toList()
+                              .map((e) {
+                            String carModelMap = e["carModel"] ?? "404NotFound" ;
+                            String appointmentDateMap =staticVar.formatDateFromTimestampWithTime(e["appointmentDate"] ?? "") ?? "404NotFound" ;
+                            String entranceDateMap =e["entranceDate"] == null ? "N/A" :  staticVar.formatDateFromTimestampWithTime(e["entranceDate"] ?? "") ?? "404NotFound" ;
+                            String totalPriceWIthTVA = e["priceSummryDetails"]?["totalWithVat"] ?? "404NotFound";
+                            String servisesMap =e["selectedServices"]?.map((e)=> e["serviceName"] ?? "404Notfound")?.toList()?.toString() ?? "404NotFound";
+
+
+                            return DataRow2(
+                              onTap: (){
+                                MyDialog.showOrderDetailsPopup(context: context, orderData: e );
+
+                              },
+                                cells: [
+                               DataCell(Center(child: Text(carModelMap))),
+                                  DataCell(Center(child: Text(appointmentDateMap))),
+                                  DataCell(Center(child: Text(entranceDateMap))),
+                                  DataCell(Center(child: Text(totalPriceWIthTVA + " Lie" ))),
+                                  DataCell(Center(child: Text(servisesMap))),
+
+                            ]);
+                          }).toList(),
+                        ),
+                      ))),
+            ),
+          ],
+        ),
+      )
+
+    ) :
+
+    /// THe init page              <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+    Animate(
       effects: [FadeEffect(duration: Duration(milliseconds: 900))],
       child: Scaffold(
         floatingActionButton: editMode ?
@@ -237,7 +328,14 @@ class _employeePageState extends State<employeePage> {
                               e["addedAt"] ?? "NotFound404";
                           String phoneNr = e["phoneNr"] ?? "NotFound404";
 
-                          return DataRow(onLongPress: () {}, cells: [
+                          return DataRow2(
+                              onTap: (){ this.empDetailsMode = true ;
+                                setState(() {});
+                                this.empDetails = e ;
+
+
+                                },
+                              onLongPress: () {}, cells: [
                             DataCell(Center(child: Text(nameMap))),
                             DataCell(Center(child: Text(commissioned))),
                             DataCell(
@@ -295,6 +393,53 @@ class _employeePageState extends State<employeePage> {
         )),
       ),
     );
+  }
+
+
+  /// simple funciotn to go back to init from employee details mode
+  void goBackToHomeScreen () {
+    this.empDetailsMode = false ;
+    setState(() {});
+
+  }
+
+  // this function gonna fetch all the orders
+  Future<void> ordersFromFirrbase() async {
+    // Initialize Firebase
+    FirebaseFirestore firestore = FirebaseFirestore.instance;
+
+    // Define a list to store the fetched data
+    List<Map<String, dynamic>> ordersList = [];
+
+    try {
+      // Get all documents from the 'services' collection
+      QuerySnapshot querySnapshot = await firestore
+          .collection('orders')
+          .orderBy('issuedDate', descending: true)
+          .get();
+
+      // Loop through the documents snapshot
+      querySnapshot.docs.forEach((doc) {
+        // Get document data
+        Map<String, dynamic> data = doc.data() as Map<String, dynamic>;
+
+        // Add document ID to the data map
+        data['docId'] = doc.id;
+
+        // Add data map to the list
+        ordersList.add(data);
+      });
+
+      this.ordersfromFirebase = ordersList;
+      // print(this.ordersfromFirebase);
+      this.isLoading = false;
+      setState(() {});
+      //print(this.employeefromFirebase);
+    } catch (e) {
+      // Print any errors for debugging purposes
+      print('Error fetching : $e');
+      MyDialog.showAlert(context, "Ok", 'Error fetching orders: $e');
+    }
   }
 
   // this function will insert new employee  to the Database

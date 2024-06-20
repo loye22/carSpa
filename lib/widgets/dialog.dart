@@ -93,6 +93,7 @@ class MyDialog {
                 _buildOrderInfo('Employee Name', orderData['empName']),
                 //  _buildOrderInfo('Specific Employee Mode', orderData['specifecEmployeeMode']),
                 _buildOrderInfo('Issued Date', _formatTimestamp(orderData['issuedDate'])),
+                _buildOrderInfo('***Sechdual date', _formatTimestamp(orderData["appointmentDate"])),
                 _buildOrderInfo('Expected Finishing Date', _formatTimestamp(orderData['expectedFinishingDate'])),
                 _buildOrderInfo('Entrance Date', _formatTimestamp(orderData['entranceDate'])),
                 _buildOrderInfo('Completion date', _formatTimestamp(orderData['completionTimestamp'])),

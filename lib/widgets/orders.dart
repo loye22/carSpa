@@ -3,8 +3,10 @@ import 'package:car_spa/widgets/CustomDateTimePicker.dart';
 import 'package:car_spa/widgets/PriceSummaryCard.dart';
 import 'package:car_spa/widgets/button.dart';
 import 'package:car_spa/widgets/customTextFieldWidget.dart';
+import 'package:car_spa/widgets/dateCalnderPickUp.dart';
 import 'package:car_spa/widgets/dialog.dart';
 import 'package:car_spa/widgets/enum.dart';
+import 'package:car_spa/widgets/filterFeedBackWidget.dart';
 import 'package:car_spa/widgets/orderDetails.dart';
 import 'package:car_spa/widgets/staticVar.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -15,6 +17,7 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_animate/flutter_animate.dart';
+import 'package:flutter_date_range_picker/flutter_date_range_picker.dart';
 import 'package:multi_dropdown/multiselect_dropdown.dart';
 import 'dart:convert' as json;
 
@@ -30,6 +33,7 @@ class _ordersState extends State<orders> {
   String clientEmail = '';
   String clientPhone = '';
   String carModel = '';
+  String filteredEmp = '';
 
   // DateTime issuedDate = DateTime.now();
   DateTime? entranceDate = null;
@@ -44,13 +48,13 @@ class _ordersState extends State<orders> {
   List<Map<String, dynamic>> servicesfromFirebase = [];
   List<Map<String, dynamic>> selectedServices = [];
   List<Map<String, dynamic>> ordersfromFirebase = [];
+  List<Map<String, dynamic>> filterdOrders = [];
 
   List<Map<String, dynamic>> employeefromFirebase = [];
   List<Map<String, dynamic>> b2bfromFirebase = [];
 
   Map<String, dynamic> priceSummryDetails = {};
   Map<String, dynamic> orderDataToDisplay = {};
-  List<Map<String, dynamic>> roolBackFromFilterData = [];
 
   double advancedPayment = 0.0;
   int discount = 0;
@@ -79,6 +83,13 @@ class _ordersState extends State<orders> {
   bool addNewOrderMode = false;
   bool isLoading = false;
   bool showOrderDetailsMode = false;
+  bool filterMode = false;
+
+  DateTime? startDateRangeFilter = null;
+
+  DateTime? endDateRangeFilter = null;
+
+  bool dateFilterMode = false;
 
   @override
   void initState() {
@@ -95,6 +106,8 @@ class _ordersState extends State<orders> {
     return Scaffold(
         floatingActionButton: this.isLoading
             ? SizedBox.shrink()
+
+            /// this is the payment,cancel, return buttons in the order details screen
             : (this.showOrderDetailsMode
                 ? Column(
                     mainAxisAlignment: MainAxisAlignment.end,
@@ -141,6 +154,8 @@ class _ordersState extends State<orders> {
                     ],
                   )
                 : (this.addNewOrderMode
+
+                    /// this is the upload the order , back buttons in the adding screen
                     ? Column(
                         mainAxisAlignment: MainAxisAlignment.end,
                         children: [
@@ -174,16 +189,45 @@ class _ordersState extends State<orders> {
                           )
                         ],
                       )
-                    : FloatingActionButton(
-                        backgroundColor: Color(0xFF1ABC9C),
-                        onPressed: () async {
-                          this.addNewOrderMode = true;
-                          setState(() {});
-                        },
-                        child: Icon(
-                          Icons.add,
-                          color: Colors.white,
-                        ),
+
+                    /// this is the add button in the inil screen
+                    : Column(
+                        mainAxisAlignment: MainAxisAlignment.end,
+                        children: [
+                          if (this.filterMode || this.dateFilterMode)
+                            Animate(
+                              effects: [SlideEffect(begin: Offset(5, 0))],
+                              child: Tooltip(
+                                message: 'Restabiliți filtrele',
+                                child: FloatingActionButton(
+                                  backgroundColor: Colors.grey,
+                                  onPressed: () {
+                                    this.filterMode = false;
+                                    this.dateFilterMode = false;
+                                    setState(() {});
+                                  },
+                                  child: Icon(
+                                    Icons.refresh,
+                                    color: Colors.white,
+                                  ),
+                                ),
+                              ),
+                            ),
+                          SizedBox(
+                            height: 15,
+                          ),
+                          FloatingActionButton(
+                            backgroundColor: Color(0xFF1ABC9C),
+                            onPressed: () async {
+                              this.addNewOrderMode = true;
+                              setState(() {});
+                            },
+                            child: Icon(
+                              Icons.add,
+                              color: Colors.white,
+                            ),
+                          ),
+                        ],
                       ))),
         body: this.isLoading
             ? staticVar.loading()
@@ -971,83 +1015,138 @@ class _ordersState extends State<orders> {
                             mainAxisAlignment: MainAxisAlignment.end,
                             children: [
                               /// this row gonna handel the filters
+
                               Row(
                                 children: [
-                                  Button(
-                                      onTap: () {
-                                        this.ordersfromFirebase = roolBackFromFilterData ;
-                                        setState(() {});
-                                      },
-                                      text: "Resetati " ),
-                                  Padding(
-                                    padding: const EdgeInsets.all(8.0),
-                                    child: Container(
-                                      width: MediaQuery.of(context).size.width *
-                                          0.2,
-                                      //  height: 100,
-                                      child: DropdownButtonFormField2<String>(
-                                        isExpanded: true,
-                                        decoration: InputDecoration(
-                                          label: Text("Angajatul"),
-                                          // Add Horizontal padding using menuItemStyleData.padding so it matches
-                                          // the menu padding when button's width is not specified.
-                                          contentPadding:
-                                              const EdgeInsets.symmetric(
-                                                  vertical: 16),
-                                          border: OutlineInputBorder(
-                                            borderRadius:
-                                                BorderRadius.circular(15),
-                                          ),
-                                          // Add more decoration..
-                                        ),
-                                        hint: const Text(
-                                          "Filtrează comenzile în funcție de angajat.",
-                                          style: TextStyle(fontSize: 14),
-                                        ),
-                                        items: this
-                                            .employeefromFirebase
-                                            .map((item) =>
-                                                DropdownMenuItem<String>(
-                                                  value: item["docId"],
-                                                  child: Text(
-                                                    item["empName"],
-                                                    style: const TextStyle(
-                                                      fontSize: 14,
-                                                    ),
-                                                  ),
-                                                ))
-                                            .toList(),
-                                        onChanged: (value) {
-                                          dynamic x  = filterByEmployeeID(orders: this.ordersfromFirebase, empId: value ?? "");
-                                          this.ordersfromFirebase =x ;
-                                          setState(() {});
+                                  /// disable this of its on employee filter mode
+                                  this.filterMode
+                                      ? SizedBox.shrink()
+                                      : dateCalnderPickUp(onDateRangeChanged:(dateRange, filterdList) {
+                                    this.filterdOrders =filterdList;
+                                    this.dateFilterMode = true;
+                                    this.startDateRangeFilter = dateRange?.start;
+                                    this.endDateRangeFilter = dateRange?.end;
 
-                                        },
-                                        buttonStyleData: const ButtonStyleData(
-                                          padding: EdgeInsets.only(right: 8),
-                                        ),
-                                        iconStyleData: const IconStyleData(
-                                          icon: Icon(
-                                            Icons.arrow_drop_down,
-                                            color: Colors.black45,
-                                          ),
-                                          iconSize: 24,
-                                        ),
-                                        dropdownStyleData: DropdownStyleData(
-                                          decoration: BoxDecoration(
-                                            borderRadius:
-                                                BorderRadius.circular(15),
-                                          ),
-                                        ),
-                                        menuItemStyleData:
-                                            const MenuItemStyleData(
-                                          padding: EdgeInsets.symmetric(
-                                              horizontal: 16),
-                                        ),
-                                      ),
-                                    ),
+                                    setState(() {});
+
+                                  }, ordersfromFirebase: this.ordersfromFirebase,),
+                                  // Tooltip(
+                                  //         message:
+                                  //             "Filtrează după interval de date",
+                                  //         child: IconButton(
+                                  //           onPressed: showCalender,
+                                  //           icon: Icon(
+                                  //             Icons.calendar_month_sharp,
+                                  //             size: 40,
+                                  //           ),
+                                  //           color: Color(0xFF1abc9c),
+                                  //         )),
+                                  SizedBox(
+                                    width: 25,
                                   ),
 
+                                  this.dateFilterMode
+                                      ? SizedBox.shrink()
+                                      : Padding(
+                                          padding: const EdgeInsets.all(8.0),
+                                          child: Container(
+                                            width: MediaQuery.of(context)
+                                                    .size
+                                                    .width *
+                                                0.2,
+                                            //  height: 100,
+                                            child: DropdownButtonFormField2<
+                                                String>(
+                                              isExpanded: true,
+                                              decoration: InputDecoration(
+                                                label: Text("Angajatul"),
+                                                // Add Horizontal padding using menuItemStyleData.padding so it matches
+                                                // the menu padding when button's width is not specified.
+                                                contentPadding:
+                                                    const EdgeInsets.symmetric(
+                                                        vertical: 16),
+                                                border: OutlineInputBorder(
+                                                  borderRadius:
+                                                      BorderRadius.circular(15),
+                                                ),
+                                                // Add more decoration..
+                                              ),
+                                              hint: const Text(
+                                                "Filtrează comenzile în funcție de angajat.",
+                                                style: TextStyle(fontSize: 14),
+                                              ),
+                                              items: this
+                                                  .employeefromFirebase
+                                                  .map((item) =>
+                                                      DropdownMenuItem<String>(
+                                                        value: item["docId"],
+                                                        child: Text(
+                                                          item["empName"],
+                                                          style:
+                                                              const TextStyle(
+                                                            fontSize: 14,
+                                                          ),
+                                                        ),
+                                                      ))
+                                                  .toList(),
+                                              onChanged: (value) {
+                                                this.filterdOrders =
+                                                    filterByEmployeeID(
+                                                        orders: this
+                                                            .ordersfromFirebase,
+                                                        empId: value ?? "");
+                                                this.filterMode = true;
+                                                this.filteredEmp = this
+                                                        .employeefromFirebase
+                                                        .where((e) =>
+                                                            e["docId"] == value)
+                                                        .first["empName"] ??
+                                                    "404NotFound";
+                                                setState(() {});
+                                              },
+                                              buttonStyleData:
+                                                  const ButtonStyleData(
+                                                padding:
+                                                    EdgeInsets.only(right: 8),
+                                              ),
+                                              iconStyleData:
+                                                  const IconStyleData(
+                                                icon: Icon(
+                                                  Icons.arrow_drop_down,
+                                                  color: Colors.black45,
+                                                ),
+                                                iconSize: 24,
+                                              ),
+                                              dropdownStyleData:
+                                                  DropdownStyleData(
+                                                decoration: BoxDecoration(
+                                                  borderRadius:
+                                                      BorderRadius.circular(15),
+                                                ),
+                                              ),
+                                              menuItemStyleData:
+                                                  const MenuItemStyleData(
+                                                padding: EdgeInsets.symmetric(
+                                                    horizontal: 16),
+                                              ),
+                                            ),
+                                          ),
+                                        ),
+                                  SizedBox(
+                                    width: 25,
+                                  ),
+                                  if (this.filterMode)
+                                    Animate(
+                                        effects: [SlideEffect()],
+                                        child: filterFeedBack(
+                                            filterName: this.filteredEmp)),
+                                  if (this.dateFilterMode)
+                                    Animate(
+                                      effects: [SlideEffect()],
+                                      child: filterFeedBack(
+                                          filterName:
+                                              " ${staticVar.formatDateFromTimestamp(this.startDateRangeFilter)}   >>>  ${staticVar.formatDateFromTimestamp(this.endDateRangeFilter)} "),
+                                    )
                                 ],
                               ),
                               Container(
@@ -1069,8 +1168,10 @@ class _ordersState extends State<orders> {
                                               staticVar.Dc("data adăugată"),
                                               staticVar.Dc("programare")
                                             ],
-                                            rows: this
-                                                .ordersfromFirebase
+                                            rows: (this.filterMode ||
+                                                        this.dateFilterMode
+                                                    ? this.filterdOrders
+                                                    : this.ordersfromFirebase)
                                                 .map((e) {
                                               String carModeMap =
                                                   e["carModel"] ??
@@ -1125,19 +1226,78 @@ class _ordersState extends State<orders> {
                   )));
   }
 
-  /// this function gonna handel the filter by date range
-  List<Map<String, dynamic>> filterByDateRange(
-      {required List<Map<String, dynamic>> orders,
-      required DateTime startDate,
-      required DateTime endDate}) {
-    return orders.where((order) {
-      DateTime appointmentDate = order['appointmentDate'];
-      bool isWithinDateRange = appointmentDate.isAfter(startDate) &&
-          appointmentDate.isBefore(endDate);
-
-      return isWithinDateRange;
-    }).toList();
-  }
+  /// these has been replaced by dateCalnderPickUp() widget the i have created
+  /// I'll leve it here just in case ^^
+  // /// this function gonna handel filter by date range event
+  // ///
+  // void showCalender() async {
+  //   await showDateRangePickerDialog(
+  //       offset: Offset(staticVar.fullWidth(context) * .35,
+  //           staticVar.fullhigth(context) * .12),
+  //       context: context,
+  //       builder: datePickerBuilder);
+  // }
+  //
+  // Widget datePickerBuilder(BuildContext context,
+  //         dynamic Function(DateRange) onDateRangeChanged) =>
+  //     Animate(
+  //       effects: [FadeEffect()],
+  //       child: DateRangePickerWidget(
+  //         theme: CalendarTheme(
+  //           selectedColor: Color(0xFF1abc9c),
+  //           // Color for selected dates
+  //           inRangeColor: Color(0xFF2c3e50),
+  //           // Color for dates within range
+  //           inRangeTextStyle: TextStyle(color: Colors.white),
+  //           // Text style for dates within range
+  //           selectedTextStyle: TextStyle(color: Colors.white),
+  //           // Text style for selected dates
+  //           todayTextStyle: TextStyle(color: Colors.black),
+  //           // Text style for today's date
+  //           defaultTextStyle: TextStyle(color: Colors.black),
+  //           // Default text style for other dates
+  //           disabledTextStyle: TextStyle(color: Colors.grey),
+  //           // Text style for disabled dates
+  //           radius: 50,
+  //           // Radius of each calendar tile
+  //           tileSize: 50, // Size of each calendar tile
+  //         ),
+  //         doubleMonth: true,
+  //         initialDateRange: DateRange(DateTime.now(), DateTime(2030)),
+  //         onDateRangeChanged: (selctedDateRange) {
+  //           this.startDateRangeFilter = selctedDateRange?.start;
+  //           this.endDateRangeFilter = selctedDateRange?.end;
+  //           if (this.startDateRangeFilter == null ||
+  //               this.endDateRangeFilter == null)
+  //             throw Exception("Error while selecting the date range");
+  //           this.dateFilterMode = true;
+  //
+  //           ///
+  //           this.filterdOrders = filterByDateRange(
+  //               orders: this.ordersfromFirebase,
+  //               startDate: this.startDateRangeFilter ?? DateTime(3000),
+  //               endDate: this.endDateRangeFilter ?? DateTime(3000));
+  //           this.dateFilterMode = true;
+  //
+  //           setState(() {});
+  //         },
+  //         height: staticVar.fullhigth(context) * .45,
+  //       ),
+  //     );
+  //
+  // /// this function gonna handel the filter by date range
+  // List<Map<String, dynamic>> filterByDateRange(
+  //     {required List<Map<String, dynamic>> orders,
+  //     required DateTime startDate,
+  //     required DateTime endDate}) {
+  //   return orders.where((order) {
+  //     DateTime appointmentDate = order['issuedDate'].toDate();
+  //     bool isWithinDateRange = appointmentDate.isAfter(startDate) &&
+  //         appointmentDate.isBefore(endDate.add(Duration(days: 1)));
+  //
+  //     return isWithinDateRange;
+  //   }).toList();
+  // }
 
   /// this function gonna handel the filter by employee name
   List<Map<String, dynamic>> filterByEmployeeID(
@@ -1804,8 +1964,7 @@ class _ordersState extends State<orders> {
       });
 
       this.ordersfromFirebase = ordersList;
-      this.roolBackFromFilterData = ordersList;
-      print(this.ordersfromFirebase);
+      // print(this.ordersfromFirebase);
       this.isLoading = false;
       setState(() {});
       //print(this.employeefromFirebase);
@@ -1815,7 +1974,4 @@ class _ordersState extends State<orders> {
       MyDialog.showAlert(context, "Ok", 'Error fetching orders: $e');
     }
   }
-
-
 }
-

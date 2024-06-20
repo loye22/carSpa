@@ -47,6 +47,7 @@ dependencies:
   kalender: ^0.4.1
   dropdown_button2: ^2.3.9
   multi_dropdown: ^2.1.4
+  flutter_date_range_picker: ^0.1.1
 
 dev_dependencies:
   flutter_test:

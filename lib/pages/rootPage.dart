@@ -132,7 +132,7 @@ class _rootPageState extends State<rootPage> {
                 child: PageView(
               controller: _pageController,
               children: [
-                orders(),
+
 
 
 
@@ -144,7 +144,7 @@ class _rootPageState extends State<rootPage> {
                   ),
                 ),
                 // orders screen
-               //  orders(),
+                 orders(),
                 // employee screen
                 employeePage(),
                 // contractor screen

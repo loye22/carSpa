@@ -566,10 +566,12 @@ class _ordersState extends State<orders> {
                                             hintText: 'Enter Discount',
                                             suffex: "%",
                                             onChanged: (value) {
+
                                               setState(() {
                                                 discount =
                                                     int.tryParse(value) ?? 0;
                                               });
+
                                             },
                                           ),
                                         ),
@@ -904,26 +906,16 @@ class _ordersState extends State<orders> {
                                                     label: "plată în avans",
                                                     hintText: "... Ron",
                                                     onChanged: (value) {
-                                                      double advancePayment =
-                                                          double.tryParse(
-                                                                  value) ??
-                                                              0.0;
-                                                      double totalPriceSummry =
-                                                          double.tryParse(
-                                                                  this.priceSummryDetails[
-                                                                          "totalWithVat"] ??
-                                                                      "0.0") ??
-                                                              0.0;
-                                                      if (advancePayment >=
-                                                          totalPriceSummry) {
+                                                      double advancePayment = double.tryParse(value) ?? 0.0;
+                                                      double totalPriceSummry = double.tryParse(this.priceSummryDetails["totalWithVat"] ?? "0.0") ?? 0.0;
+                                                      if (advancePayment >= totalPriceSummry) {
                                                         MyDialog.showAlert(
                                                             context,
                                                             "Ok",
                                                             "Plata în avans pe care ați introdus-o este egală sau mai mare decât factura totală. Vă rugăm să vă asigurați că introduceți o plată în avans validă");
                                                         advancePayment = 0.0;
                                                       }
-                                                      this.advancedPayment =
-                                                          advancePayment;
+                                                      this.advancedPayment = advancePayment;
                                                       setState(() {});
                                                     })
                                                 : SizedBox.shrink(),
@@ -1335,13 +1327,19 @@ class _ordersState extends State<orders> {
   /// this function will update the order status to completed
   Future<void> _completeOrder() async{
     try {
+      /// Check if the current date and time (Datetime.now()) is before the appointment.
+      /// If so, return because it doesn't make sense to finish the car before its appointment.
+      if(DateTime.now().isBefore(this.orderDataToDisplay["appointmentDate"].toDate())) {
+        MyDialog.showAlert(context, "Ok", "Această comandă este programată pentru ${staticVar.formatDateFromTimestampWithTime(this.orderDataToDisplay["appointmentDate"])}. Nu poate fi finalizată acum.");
+        return;
+      }
 
       this.isLoading = true;
       setState(() {});
       // Get reference to the document
       DocumentReference orderRef =
       FirebaseFirestore.instance.collection('orders').doc(this.orderDataToDisplay["docId"]);
-      await orderRef.update({'status': orderStatus.completed.toString()});
+      await orderRef.update({'status': orderStatus.completed.toString() , 'finishedDate' : DateTime.now() });
       staticVar.showSubscriptionSnackbar(
           context: context, msg:"Comenzile au fost actualizate cu succes.");
       this.isLoading = false ;
@@ -1386,7 +1384,7 @@ class _ordersState extends State<orders> {
               title:
                   Text('Payment Status', style: TextStyle(color: Colors.white)),
               content: Text(
-                  "You are now about to change the payment status of this order. Please make sure to receive $totalPrice RON from the client.",
+                  "You are now about to change the payment status of this order. Please make sure to receive ${totalPrice.toStringAsFixed(2)} RON from the client.",
                   style: TextStyle(color: Colors.white)),
               actions: <Widget>[
                 TextButton(
@@ -1421,7 +1419,7 @@ class _ordersState extends State<orders> {
               title:
                   Text('Payment Status', style: TextStyle(color: Colors.white)),
               content: Text(
-                  "You are now about to change the payment status of this order. Please make sure to receive ${totalPrice - advancePayment} RON from the client.",
+                  "You are now about to change the payment status of this order. Please make sure to receive ${(totalPrice - advancePayment).toStringAsFixed(2)} RON from the client.",
                   style: TextStyle(color: Colors.white)),
               actions: <Widget>[
                 TextButton(
@@ -1688,6 +1686,18 @@ class _ordersState extends State<orders> {
     try {
       this.isLoading = true;
       setState(() {});
+
+
+      /// Check if the advance payement is less than the total price after disocunt
+      double advancePayment = this.priceSummryDetails["advancePayment"] ;
+      double totalWithVat = double.tryParse(priceSummryDetails["totalWithVat"] ?? "0.0") ?? 0.0;
+      if(advancePayment >= totalWithVat){
+         MyDialog.showAlert(context, "OK", "Avansul dumneavoastră este mai mare decât prețul total.");
+        this.advancedPayment = 0.0 ;
+        this.discount = 0 ;
+          setState(() {});
+        return ;
+      }
 
       /// check the mandetory inputs
 

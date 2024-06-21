@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 
 // Assuming StaticVar includes your predefined styles and constants
 
-class PriceSummaryCard extends StatelessWidget {
+class PriceSummaryCard extends StatefulWidget {
   final List<Map<String, dynamic>> serviceList;
   final double discount;
   final DiscountType discountType;
@@ -18,17 +18,22 @@ class PriceSummaryCard extends StatelessWidget {
   });
 
   @override
+  State<PriceSummaryCard> createState() => _PriceSummaryCardState();
+}
+
+class _PriceSummaryCardState extends State<PriceSummaryCard> {
+  @override
   Widget build(BuildContext context) {
     // Calculate total price of services
-    double totalPrice = serviceList.fold(0, (previous, service) => previous + (service['price'] ?? 0));
+    double totalPrice = widget.serviceList.fold(0, (previous, service) => previous + (service['price'] ?? 0));
 
     double afterDiscount;
 
     // Apply discount to the total price
-    if (discountType == DiscountType.Fixed) {
-      afterDiscount = totalPrice - discount;
+    if (widget.discountType == DiscountType.Fixed) {
+      afterDiscount = totalPrice - widget.discount;
     } else {
-      afterDiscount = totalPrice * (1 - discount / 100);
+      afterDiscount = totalPrice * (1 - widget.discount / 100);
     }
 
     double vat = afterDiscount * 0.19; // Calculate VAT based on the discounted total
@@ -37,16 +42,16 @@ class PriceSummaryCard extends StatelessWidget {
     // Call the callback function with the calculated values
     Map<String, dynamic> data = {
       "totalPrice": totalPrice.toStringAsFixed(2),
-      "discountType": discountType.toString(),
-      "discount": discount.toStringAsFixed(2),
+      "discountType": widget.discountType.toString(),
+      "discount": widget.discount.toStringAsFixed(2),
       "afterDiscount": afterDiscount.toStringAsFixed(2),
       "vat": vat.toStringAsFixed(2),
       "totalWithVat": totalWithVat.toStringAsFixed(2),
-      "advancePayment" : advancePayment ,
+      "advancePayment" : widget.advancePayment ,
 
 
     };
-    dataSummary(data);
+    widget.dataSummary(data);
     String currency = 'Ron';
 
     return Card(
@@ -85,7 +90,7 @@ class PriceSummaryCard extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    for (var service in serviceList) ...[
+                    for (var service in widget.serviceList) ...[
                       _buildRow(service['serviceName'], '${service['price'].toStringAsFixed(2)} $currency'),
                       SizedBox(height: 10),
                     ],
@@ -97,9 +102,9 @@ class PriceSummaryCard extends StatelessWidget {
                     SizedBox(height: 10),
                     _buildRow2(
                       'Discount',
-                      this.discountType == DiscountType.Fixed
-                          ? '- ${discount.toStringAsFixed(2)} $currency'
-                          : '- %${discount.toStringAsFixed(2)}',
+                      this.widget.discountType == DiscountType.Fixed
+                          ? '- ${widget.discount.toStringAsFixed(2)} $currency'
+                          : '- %${widget.discount.toStringAsFixed(2)}',
                     ),
                     SizedBox(height: 10),
                     _buildRow2('Price After Discount', '${afterDiscount.toStringAsFixed(2)}'),
@@ -107,18 +112,18 @@ class PriceSummaryCard extends StatelessWidget {
                     _buildRow2('VAT (19%)', '${vat.toStringAsFixed(2)} $currency'),
                     SizedBox(height: 10),
                     _buildRow2('Total Price with VAT', '${totalWithVat.toStringAsFixed(2)} $currency' ),
-          
-          
+
+
                     // this part to hande the advance payment
-                    if(this.advancePayment != 0 )
+                    if(this.widget.advancePayment != 0 )
                     SizedBox(height: 10),
-                    if(this.advancePayment != 0 )
-                    _buildRow2('Advance payment', '${this.advancePayment.toStringAsFixed(2)} $currency' ),
-                    if(this.advancePayment != 0 )
+                    if(this.widget.advancePayment != 0 )
+                    _buildRow2('Advance payment', '${this.widget.advancePayment.toStringAsFixed(2)} $currency' ),
+                    if(this.widget.advancePayment != 0 )
                     SizedBox(height: 10),
-                    if(this.advancePayment != 0 )
-                    _buildRow2('Remaining amount', '${(this.advancePayment - totalWithVat).toStringAsFixed(2)} $currency' ),
-          
+                    if(this.widget.advancePayment != 0 )
+                    _buildRow2('Remaining amount', '${(this.widget.advancePayment - totalWithVat).toStringAsFixed(2)} $currency' ),
+
                   ],
                 ),
               ),

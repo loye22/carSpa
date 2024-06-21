@@ -123,8 +123,10 @@ class _calenderViewState extends State<calenderView> {
                 modifiable: false,
                 dateTimeRange: DateTimeRange(
                   start: e["appointmentDate"].toDate() ?? DateTime.now(),
-                  end: e["expectedFinishingDate"].toDate() ??
-                      DateTime.now().add(Duration(days: 5)),
+                  end: e["finishedDate"]?.toDate() ??
+                      (e["appointmentDate"]?.toDate()?.add(Duration(days: 5)) ?? DateTime.now().add(Duration(days: 25)))
+
+                  ,
                 ),
                 eventData: Event(
                   orderData: e ?? {} ,

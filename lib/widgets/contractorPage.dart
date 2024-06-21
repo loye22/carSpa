@@ -1,3 +1,4 @@
+import 'package:car_spa/widgets/EmployeeNameCard.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:car_spa/widgets/button.dart';
 import 'package:car_spa/widgets/confirmationDialog.dart';
@@ -21,6 +22,7 @@ class _contractorPageState extends State<contractorPage> {
   bool newB2B = false;
   bool isLoading = false;
   bool editMode = false;
+  bool showAllContractorCarsMode = false ;
 
   String B2BName = "";
   String email = "";
@@ -28,19 +30,111 @@ class _contractorPageState extends State<contractorPage> {
   String cui = "" ;
 
   List<Map<String, dynamic>> B2BDataFromFirebase = [];
+  List<Map<String, dynamic>>  ordersfromFirebase = [] ;
 
   Map<String,dynamic> editDataMode = {};
+  Map<String,dynamic> dealerDetails = {};
+
 
   @override
   void initState() {
     // TODO: implement initState
     super.initState();
+    ordersFromFirrbase();
     fetchB2BData();
   }
 
   @override
   Widget build(BuildContext context) {
-    return Animate(
+    return
+    this.showAllContractorCarsMode ?
+    Animate(
+        effects: [FadeEffect(duration: Duration(milliseconds: 900))],
+        child: Scaffold(
+          floatingActionButton:   Tooltip(
+            message: 'Reveniți la ecranul de start',
+            child: Animate(
+              effects: [SlideEffect(begin: Offset(5, 0))],
+              child: FloatingActionButton(
+                backgroundColor: Color(0xFF1ABC9C),
+                onPressed: goBackToHomeScreen,
+                child: Icon(
+                  Icons.arrow_back,
+                  color: Colors.white,
+                ),
+              ),
+            ),
+          ),
+          body:Column(
+            mainAxisAlignment: MainAxisAlignment.end,
+            children: [
+              Row(
+                children: [
+                  cardName(name:this.dealerDetails["B2BName"] ?? "404NotFound"),
+                ],
+              ),
+              Padding(
+                padding: const EdgeInsets.all(8.0),
+                child: Container(
+                    width: staticVar.golobalWidth(context) ,
+                    height: staticVar.golobalHigth(context) * .9,
+                    decoration: BoxDecoration(
+                      //    border: Border.all(color: Colors.black.withOpacity(.33)),
+                        borderRadius: BorderRadius.circular(10),
+                        color: Colors.white),
+                    child: Card(
+                        elevation: 1,
+                        child: Center(
+                          child: DataTable2(
+                            columnSpacing: 5,
+                            columns: [
+                              staticVar.Dc("Modelul mașinii"),
+                              staticVar.Dc("Data programării"),
+                              staticVar.Dc("payment status"),
+                              staticVar.Dc("Preț total cu TVA"),
+                              staticVar.Dc("Servicii"),
+
+
+
+                            ],
+                            rows: this.ordersfromFirebase.where((ele) => ele["dealerID"] == this.dealerDetails["docId"] ).toList()
+                                .map((e) {
+                              String carModelMap = e["carModel"] ?? "404NotFound" ;
+                              String appointmentDateMap =staticVar.formatDateFromTimestampWithTime(e["appointmentDate"] ?? "") ?? "404NotFound" ;
+                              String paymentStatusMap = e["paymentStatus"];
+                              String totalPriceWIthTVA = e["priceSummryDetails"]?["totalWithVat"] ?? "404NotFound";
+                              String servisesMap =e["selectedServices"]?.map((e)=> e["serviceName"] ?? "404Notfound")?.toList()?.toString() ?? "404NotFound";
+
+
+                              return DataRow2(
+                                  onTap: (){
+                                    MyDialog.showOrderDetailsPopup(context: context, orderData: e );
+
+                                  },
+                                  cells: [
+
+                                    DataCell(Center(child: Text(carModelMap))),
+                                    DataCell(Center(child: Text(appointmentDateMap))),
+                                    DataCell(Center(child:   staticVar.getPaymentStatusWidget(status2: paymentStatusMap ?? ""))),
+                                    DataCell(Center(child: Text(totalPriceWIthTVA + " Lie" ))),
+                                    DataCell(Center(child: Text(servisesMap))),
+
+                                  ]);
+                            }).toList(),
+                          ),
+                        ))),
+              ),
+            ],
+          ),
+        )
+
+    )
+
+
+
+
+    /// This is the init page
+      :Animate(
       effects: [FadeEffect(duration: Duration(milliseconds: 900))],
       child: Scaffold(
         floatingActionButton: editMode ?
@@ -219,6 +313,8 @@ class _contractorPageState extends State<contractorPage> {
             ),
           ),
         )
+
+        /// This is the init page
             : Animate(
           effects: [
             FadeEffect(duration: Duration(milliseconds: 1200))
@@ -254,7 +350,14 @@ class _contractorPageState extends State<contractorPage> {
                           String cuiMap = e["cui"] ?? "NotFound404" ;
 
 
-                          return DataRow(onLongPress: () {}, cells: [
+                          return DataRow2(
+                              onTap: (){
+                                print(e);
+                                this.showAllContractorCarsMode = true ;
+                                this.dealerDetails = e ;
+                                setState(() {});
+                              },
+                              onLongPress: () {}, cells: [
                             DataCell(Center(child: Text(nameMap))),
                             DataCell(
                               Center(
@@ -324,6 +427,53 @@ class _contractorPageState extends State<contractorPage> {
         )),
       ),
     );
+  }
+
+
+  // this function gonna fetch all the dealer orders
+  Future<void> ordersFromFirrbase() async {
+    // Initialize Firebase
+    FirebaseFirestore firestore = FirebaseFirestore.instance;
+
+    // Define a list to store the fetched data
+    List<Map<String, dynamic>> ordersList = [];
+
+    try {
+      // Get all documents from the 'services' collection
+      QuerySnapshot querySnapshot = await firestore
+          .collection('orders')
+          .orderBy('issuedDate', descending: true)
+          .get();
+
+      // Loop through the documents snapshot
+      querySnapshot.docs.forEach((doc) {
+        // Get document data
+        Map<String, dynamic> data = doc.data() as Map<String, dynamic>;
+
+        // Add document ID to the data map
+        data['docId'] = doc.id;
+
+        // Add data map to the list if the orders is on dealer mode
+        if(data["dealerMode"])
+        ordersList.add(data);
+      });
+
+      this.ordersfromFirebase = ordersList;
+      // print(this.ordersfromFirebase);
+      this.isLoading = false;
+      setState(() {});
+      //print(this.employeefromFirebase);
+    } catch (e) {
+      // Print any errors for debugging purposes
+      print('Error fetching : $e');
+      MyDialog.showAlert(context, "Ok", 'Error fetching orders: $e');
+    }
+  }
+
+  /// This function will go back to inil page from the show b2b cars mode
+  void goBackToHomeScreen() {
+    this.showAllContractorCarsMode = false ;
+    setState(() {});
   }
 
   // this function will insert new B2B  to the Database

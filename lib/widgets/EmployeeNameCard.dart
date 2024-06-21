@@ -6,18 +6,18 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 
-class EmployeeNameCard extends StatelessWidget {
+class cardName extends StatelessWidget {
   final String name;
 
-  const EmployeeNameCard({Key? key, required this.name}) : super(key: key);
+  const cardName({Key? key, required this.name}) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
     return Animate(
       effects: [SlideEffect()],
       child: Container(
-        height: 100,
-        width: 300,
+        height: staticVar.fullWidth(context) * .05,
+        width: staticVar.fullWidth(context) * .2,
         child: Card(
           color: Color(0xFF1ABC9C),
           elevation: 5,

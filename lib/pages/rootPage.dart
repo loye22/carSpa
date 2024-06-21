@@ -135,8 +135,6 @@ class _rootPageState extends State<rootPage> {
 
 
 
-
-
                 //clander
                 Container(
                   child: Center(

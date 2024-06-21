@@ -46,7 +46,7 @@ class _employeePageState extends State<employeePage> {
   @override
   Widget build(BuildContext context) {
     return this.empDetailsMode ?
-    /// the emplyee detals scren
+    /// the employee details  scren
     Animate(
       effects: [FadeEffect(duration: Duration(milliseconds: 900))],
       child: Scaffold(
@@ -69,7 +69,7 @@ class _employeePageState extends State<employeePage> {
           children: [
             Row(
               children: [
-                EmployeeNameCard(name: this.empDetails["empName"] ?? "404Notfound"),
+                cardName(name: this.empDetails["empName"] ?? "404Notfound"),
               ],
             ),
             Padding(
@@ -89,7 +89,7 @@ class _employeePageState extends State<employeePage> {
                           columns: [
                             staticVar.Dc("Modelul mașinii"),
                             staticVar.Dc("Data programării"),
-                            staticVar.Dc("Data intrării"),
+                            staticVar.Dc("Parțial plătit"),
                             staticVar.Dc("Preț total cu TVA"),
                             staticVar.Dc("Servicii"),
 
@@ -100,7 +100,7 @@ class _employeePageState extends State<employeePage> {
                               .map((e) {
                             String carModelMap = e["carModel"] ?? "404NotFound" ;
                             String appointmentDateMap =staticVar.formatDateFromTimestampWithTime(e["appointmentDate"] ?? "") ?? "404NotFound" ;
-                            String entranceDateMap =e["entranceDate"] == null ? "N/A" :  staticVar.formatDateFromTimestampWithTime(e["entranceDate"] ?? "") ?? "404NotFound" ;
+                            String paymentStatusMap =e["paymentStatus"];
                             String totalPriceWIthTVA = e["priceSummryDetails"]?["totalWithVat"] ?? "404NotFound";
                             String servisesMap =e["selectedServices"]?.map((e)=> e["serviceName"] ?? "404Notfound")?.toList()?.toString() ?? "404NotFound";
 
@@ -113,7 +113,7 @@ class _employeePageState extends State<employeePage> {
                                 cells: [
                                DataCell(Center(child: Text(carModelMap))),
                                   DataCell(Center(child: Text(appointmentDateMap))),
-                                  DataCell(Center(child: Text(entranceDateMap))),
+                                  DataCell(Center(child: staticVar.getPaymentStatusWidget(status2: paymentStatusMap))),
                                   DataCell(Center(child: Text(totalPriceWIthTVA + " Lie" ))),
                                   DataCell(Center(child: Text(servisesMap))),
 

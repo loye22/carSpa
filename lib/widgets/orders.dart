@@ -112,6 +112,26 @@ class _ordersState extends State<orders> {
                 ? Column(
                     mainAxisAlignment: MainAxisAlignment.end,
                     children: [
+                      if((this.orderDataToDisplay["paymentStatus"] ?? false )== PaymentStatus.paid.toString()
+                          &&
+                          (this.orderDataToDisplay["status"]  ?? false )!= orderStatus.canceled.toString()
+                          &&
+                          (this.orderDataToDisplay["status"]  ?? false )!= orderStatus.completed.toString()
+
+                      )
+                        /// This button gonna update the order status to completed
+                        /// this button will be shown only if the order is apied fully and the order is not on cancel state
+                      Tooltip(
+                        message: 'Acest buton este pentru a completa comanda',
+                        child: FloatingActionButton(
+                          backgroundColor: Color(0xFF1ABC9C),
+                          onPressed: _completeOrder,
+                          child: Icon(Icons.assignment_turned_in ,color: Colors.white,),
+                        ),
+                      ),
+                      SizedBox(
+                        height: 10,
+                      ),
                       Tooltip(
                         message: 'Plătește comanda',
                         child: FloatingActionButton(
@@ -1204,7 +1224,7 @@ class _ordersState extends State<orders> {
                                                             Text(carModeMap))),
                                                     DataCell(Center(
                                                         child: staticVar
-                                                            .getPaymentStatusWidget(
+                                                             .getPaymentStatusWidget(
                                                                 status2:
                                                                     paymentStatusMap))),
                                                     DataCell(Center(
@@ -1299,6 +1319,9 @@ class _ordersState extends State<orders> {
   //   }).toList();
   // }
 
+
+
+
   /// this function gonna handel the filter by employee name
   List<Map<String, dynamic>> filterByEmployeeID(
       {required List<Map<String, dynamic>> orders, required String empId}) {
@@ -1308,6 +1331,32 @@ class _ordersState extends State<orders> {
       return isMatchingEmployee;
     }).toList();
   }
+
+  /// this function will update the order status to completed
+  Future<void> _completeOrder() async{
+    try {
+
+      this.isLoading = true;
+      setState(() {});
+      // Get reference to the document
+      DocumentReference orderRef =
+      FirebaseFirestore.instance.collection('orders').doc(this.orderDataToDisplay["docId"]);
+      await orderRef.update({'status': orderStatus.completed.toString()});
+      staticVar.showSubscriptionSnackbar(
+          context: context, msg:"Comenzile au fost actualizate cu succes.");
+      this.isLoading = false ;
+      this.showOrderDetailsMode = false ;
+      ordersFromFirrbase();
+      setState(() {});
+    }
+    catch(e){
+      this.isLoading = false ;
+      setState(() {});
+      print('error $e') ;
+      MyDialog.showAlert(context, "Ok", "Error $e");
+    }
+
+}
 
   /// this funciton will handel the payment status .... it will flip it to paid in case all the condtions are met
   Future<void> upadtePaymentStatus() async {

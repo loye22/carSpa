@@ -108,6 +108,7 @@ class _contractorPageState extends State<contractorPage> {
 
                               return DataRow2(
                                   onTap: (){
+                                    print(e);
                                     MyDialog.showOrderDetailsPopup(context: context, orderData: e );
 
                                   },

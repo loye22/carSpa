@@ -374,7 +374,7 @@ class staticVar {
   }
 
 
-
+static bool inRomanian = true  ;
 
 
 

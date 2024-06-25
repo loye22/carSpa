@@ -151,7 +151,7 @@ class _rootPageState extends State<rootPage> {
                 services(),
                 // setting screen
                 Container(
-                  child: customAccountWidget(),
+                  child: CustomAccountWidget(),
                 ),
               ],
             ))

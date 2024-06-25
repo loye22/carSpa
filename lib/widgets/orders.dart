@@ -112,6 +112,16 @@ class _ordersState extends State<orders> {
                 ? Column(
                     mainAxisAlignment: MainAxisAlignment.end,
                     children: [
+                      if(this.orderDataToDisplay["status"] == orderStatus.pending.toString()&& this.orderDataToDisplay["entranceDate"]  == null )
+                      Tooltip(
+                        message: 'Înregistrează intrarea mașinii',
+                        child: FloatingActionButton(
+                          backgroundColor:Colors.lightBlueAccent ,
+                          onPressed:_updateCarEnternceDate,
+                          child: Icon(Icons.car_crash , color: Colors.white,), // Icon inside the FAB
+                        ),
+                      ),
+                      SizedBox(height: 10,),
                       if((this.orderDataToDisplay["paymentStatus"] ?? false )== PaymentStatus.paid.toString()
                           &&
                           (this.orderDataToDisplay["status"]  ?? false )!= orderStatus.canceled.toString()
@@ -1324,6 +1334,76 @@ class _ordersState extends State<orders> {
     }).toList();
   }
 
+  /// THis function gonna register the car entrence date in the car spa
+  /// PLease note to update the status the status of the order must be pendding
+  /// and the current date must be after the appotment
+  Future<void> _updateCarEnternceDate()async{
+
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        String docId = orderDataToDisplay["docId"] ?? "";
+        return AlertDialog(
+          backgroundColor: Colors.grey[850],
+          title:
+          Text('Înregistrare intrare mașină', style: TextStyle(color: Colors.white)),
+          content: Text("Asigurați-vă că mașina este introdusă corect în facilitatea de îngrijire auto. Vă rugăm să nu continuați dacă mașina nu este prezentă!",
+                style: TextStyle(color: Colors.white)),
+          actions: <Widget>[
+            TextButton(
+              child: Text('Cancel', style: TextStyle(color: Colors.white)),
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+            ),
+            TextButton(
+              child: Text('Proceed', style: TextStyle(color: Colors.white)),
+              onPressed: () async {
+                if(DateTime.now().isBefore(this.orderDataToDisplay["appointmentDate"].toDate())) {
+                  MyDialog.showAlert(context, "Ok", "Această comandă este programată pentru ${staticVar.formatDateFromTimestampWithTime(this.orderDataToDisplay["appointmentDate"])}. Nu poate fi finalizată acum.");
+                  return;
+                }
+               await  _updateCarEnternceOnDataBase(docId: docId);
+               Navigator.of(context).pop();
+
+              },
+            ),
+          ],
+        );
+      },
+    );
+
+  }
+
+  Future<void> _updateCarEnternceOnDataBase({required String docId})async {
+    try{
+      /// Check if the current date and time (Datetime.now()) is before the appointment.
+      /// If so, return because it doesn't make sense to finish the car before its appointment.
+
+      this.isLoading = true;
+      setState(() {});
+      // Get reference to the document
+      DocumentReference orderRef =
+      FirebaseFirestore.instance.collection('orders').doc(docId);
+
+      // Update the status field of the document to 'canceled'
+      await orderRef.update({'entranceDate' : DateTime.now()});
+      staticVar.showSubscriptionSnackbar(
+          context: context, msg: "Starea plății a fost actualizată cu succes.");
+      this.ordersFromFirrbase();
+      this.showOrderDetailsMode = false;
+      this.isLoading = false;
+      setState(() {});
+
+    }
+    catch(e){
+      MyDialog.showAlert(context, "Ok", "Error $e");
+    }
+
+
+
+  }
+
   /// this function will update the order status to completed
   Future<void> _completeOrder() async{
     try {
@@ -1358,6 +1438,7 @@ class _ordersState extends State<orders> {
 
   /// this funciton will handel the payment status .... it will flip it to paid in case all the condtions are met
   Future<void> upadtePaymentStatus() async {
+
     /// this funciton will change the payment status to paid if these 2 cases are met
     /// 1. the orders is on pending or inProgress status
     /// 2. the paymetn status is unpaid or partchlly paid
@@ -1384,6 +1465,8 @@ class _ordersState extends State<orders> {
               title:
                   Text('Payment Status', style: TextStyle(color: Colors.white)),
               content: Text(
+                  staticVar.inRomanian ?
+                "Acum urmează să schimbați statusul plății acestei comenzi. Vă rugăm să vă asigurați că primiți ${totalPrice.toStringAsFixed(2)} RON de la client." :
                   "You are now about to change the payment status of this order. Please make sure to receive ${totalPrice.toStringAsFixed(2)} RON from the client.",
                   style: TextStyle(color: Colors.white)),
               actions: <Widget>[
@@ -1419,6 +1502,8 @@ class _ordersState extends State<orders> {
               title:
                   Text('Payment Status', style: TextStyle(color: Colors.white)),
               content: Text(
+                  staticVar.inRomanian ?
+                "Acum urmează să schimbați statusul plății acestei comenzi. Vă rugăm să vă asigurați că primiți ${(totalPrice - advancePayment).toStringAsFixed(2)} RON de la client." :
                   "You are now about to change the payment status of this order. Please make sure to receive ${(totalPrice - advancePayment).toStringAsFixed(2)} RON from the client.",
                   style: TextStyle(color: Colors.white)),
               actions: <Widget>[
@@ -1450,10 +1535,10 @@ class _ordersState extends State<orders> {
       builder: (BuildContext context) {
         return AlertDialog(
           backgroundColor: Colors.grey[850],
-          title: Text('Can\'t change the payment status',
+          title: Text(staticVar.inRomanian ? "Nu se poate schimba statusul plății" :  'Can\'t change the payment status',
               style: TextStyle(color: Colors.white)),
           content: Text(
-              "The order you chose is either already paid, canceled, or completed.",
+              staticVar.inRomanian ? "Comanda pe care ați ales-o este deja plătită, anulată sau finalizată." : "The order you chose is either already paid, canceled, or completed.",
               style: TextStyle(color: Colors.white)),
           actions: <Widget>[
             TextButton(
@@ -1514,6 +1599,10 @@ class _ordersState extends State<orders> {
         String message = status == orderStatus.canceled
             ? 'You can\'t cancel this order becuase its already been canceled.'
             : 'You can\'t cancel this order becuase its its already completed.';
+        String mesaj = status == orderStatus.canceled
+            ? 'Nu puteți anula această comandă deoarece a fost deja anulată.'
+            : 'Nu puteți anula această comandă deoarece a fost deja finalizată.';
+
         showDialog(
           context: context,
           builder: (BuildContext context) {
@@ -1524,7 +1613,7 @@ class _ordersState extends State<orders> {
                 style: TextStyle(color: Colors.white),
               ),
               content: Text(
-                message,
+               staticVar.inRomanian ? mesaj :  message,
                 style: TextStyle(color: Colors.white),
               ),
               actions: <Widget>[
@@ -1554,7 +1643,7 @@ class _ordersState extends State<orders> {
               title:
                   Text('Payment Status', style: TextStyle(color: Colors.white)),
               content: Text(
-                  'The client has paid ${totalPrice.toStringAsFixed(2)} RON. Are you sure you want to proceed?',
+                  staticVar.inRomanian ? "Clientul a plătit ${totalPrice.toStringAsFixed(2)} RON. Sunteți sigur că doriți să continuați?" :  'The client has paid ${totalPrice.toStringAsFixed(2)} RON. Are you sure you want to proceed?',
                   style: TextStyle(color: Colors.white)),
               actions: <Widget>[
                 TextButton(
@@ -1580,7 +1669,7 @@ class _ordersState extends State<orders> {
         return;
       }
 
-      /// if the clint made advance payment make sure to notify the user about it
+      /// if the client made advance payment make sure to notify the user about it
       if (paymentStatus == PaymentStatus.partiallyPaid.toString()) {
         showDialog(
           context: context,
@@ -1590,7 +1679,9 @@ class _ordersState extends State<orders> {
               title:
                   Text('Payment Status', style: TextStyle(color: Colors.white)),
               content: Text(
-                  'The client gave you and advance payment  ${advancePayment} RON. Are you sure you want to proceed?',
+                  staticVar.inRomanian ?
+                  "Clientul v-a dat un avans de ${advancePayment} RON. Sunteți sigur că doriți să continuați?"
+                      :'The client gave you and advance payment  ${advancePayment} RON. Are you sure you want to proceed?',
                   style: TextStyle(color: Colors.white)),
               actions: <Widget>[
                 TextButton(
@@ -1620,8 +1711,8 @@ class _ordersState extends State<orders> {
           context: context,
           builder: (BuildContext context) {
             return AlertDialog(
-              title: Text('Cancellation Warning'),
-              content: Text('Are you sure you want to cancel this order ? '),
+              title: Text(staticVar.inRomanian ?  "Avertisment de anulare": 'Cancellation Warning'),
+              content: Text(staticVar.inRomanian ? "Sunteți sigur că doriți să anulați această comandă?" : 'Are you sure you want to cancel this order ? '),
               actions: <Widget>[
                 TextButton(
                   child: Text('Go back'),

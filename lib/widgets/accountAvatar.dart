@@ -1,62 +1,64 @@
-import 'package:firebase_auth/firebase_auth.dart';
+import 'package:car_spa/widgets/staticVar.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
-class customAccountWidget extends StatefulWidget {
+class CustomAccountWidget extends StatefulWidget {
   @override
-  _customAccountWidgetState createState() => _customAccountWidgetState();
+  _CustomAccountWidgetState createState() => _CustomAccountWidgetState();
 }
 
-class _customAccountWidgetState extends State<customAccountWidget> {
-  bool isMenuOpen = false;
-  bool isLoading = false;
+class _CustomAccountWidgetState extends State<CustomAccountWidget> {
   String? currentUserEmail;
+
+
 
   @override
   void initState() {
-    // TODO: implement initState
     super.initState();
     _getCurrentUserEmail();
   }
 
-
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: () {
-        setState(() {
-          isMenuOpen = !isMenuOpen;
-        });
-      },
-      child: Padding(
-        padding: EdgeInsets.symmetric(horizontal: 16.0),
-        child: Row(
-          children: [
-            Icon(Icons.account_circle),
-            SizedBox(width: 8.0),
-            Text(this.currentUserEmail ?? "Error"),
-            if (isMenuOpen) ...[
-              // Additional widgets when the menu is open
-              SizedBox(width: 8.0),
-              InkWell(
-                onTap: () async {
-                  // Handle logout action
-                  await FirebaseAuth.instance.signOut();
+    return Padding(
+      padding: EdgeInsets.symmetric(horizontal: 16.0),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: <Widget>[
+          ElevatedButton(
+            onPressed: () async {
+              // Handle log out action\
+              await FirebaseAuth.instance.signOut();
+
+              print('Logged out');
+            },
+            child: Text('Log Out'),
+          ),
+          SizedBox(height: 20),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: <Widget>[
+              Text('English'),
+              Switch(
+                value: staticVar.inRomanian,
+                onChanged: (value) {
+                  setState(() {
+
+                    staticVar.inRomanian = value;
+                    setState(() {});
+                  });
+
                 },
-                child: Text(
-                  'Logout',
-                  style: TextStyle(
-                    color: Colors.red, // Customize the color
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
               ),
+              Text('Romanian'),
             ],
-          ],
-        ),
-      ),
+          ),
+        ],
+      )
     );
   }
+
   Future<void> _getCurrentUserEmail() async {
     User? user = FirebaseAuth.instance.currentUser;
     if (user != null) {

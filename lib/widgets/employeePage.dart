@@ -24,6 +24,7 @@ class _employeePageState extends State<employeePage> {
   bool empDetailsMode = false ;
 
 
+
   String employeeName = "";
   String percentage = "";
   String phoneNr = "" ;
@@ -129,7 +130,7 @@ class _employeePageState extends State<employeePage> {
     ) :
 
     /// THe init page              <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
-    Animate(
+    this.isLoading ? staticVar.loading()  : Animate(
       effects: [FadeEffect(duration: Duration(milliseconds: 900))],
       child: Scaffold(
         floatingActionButton: editMode ?

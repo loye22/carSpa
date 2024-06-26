@@ -135,7 +135,7 @@ class _contractorPageState extends State<contractorPage> {
 
 
     /// This is the init page
-      :Animate(
+      :(this.isLoading ? staticVar.loading() : Animate(
       effects: [FadeEffect(duration: Duration(milliseconds: 900))],
       child: Scaffold(
         floatingActionButton: editMode ?
@@ -301,7 +301,7 @@ class _contractorPageState extends State<contractorPage> {
                 ),
 
                 customTextFieldWidget(
-                 limit: 10,
+                  limit: 10,
                   label: "CUI",
                   hintText: "RO13655452",
                   onChanged: (data) {
@@ -363,7 +363,7 @@ class _contractorPageState extends State<contractorPage> {
                             DataCell(
                               Center(
                                 child: Text(
-                                 cuiMap
+                                    cuiMap
                                 ),
                               ),
                             ),
@@ -377,14 +377,14 @@ class _contractorPageState extends State<contractorPage> {
                             DataCell(
                               Center(
                                 child: Text(
-                                 emailMap,
+                                  emailMap,
                                 ),
                               ),
                             ),
                             DataCell(
                               Center(
                                 child: Text(
-                                 phoneNrMap
+                                    phoneNrMap
                                 ),
                               ),
                             ),
@@ -427,7 +427,7 @@ class _contractorPageState extends State<contractorPage> {
           ),
         )),
       ),
-    );
+    )) ;
   }
 
 

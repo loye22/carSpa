@@ -25,6 +25,7 @@ class _servicesState extends State<services> {
   bool isLoading = false;
   bool editMode = false;
 
+
   String serviceName = "";
   String price = "";
 
@@ -41,7 +42,7 @@ class _servicesState extends State<services> {
 
   @override
   Widget build(BuildContext context) {
-    return Animate(
+    return this.isLoading ? staticVar.loading()   : Animate(
       effects: [FadeEffect(duration: Duration(milliseconds: 900))],
       child: Scaffold(
         floatingActionButton: editMode ?

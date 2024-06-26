@@ -2,6 +2,8 @@ import 'dart:io';
 import 'package:car_spa/widgets/dialog.dart';
 import 'package:car_spa/widgets/staticVar.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:dropdown_button2/dropdown_button2.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:kalender/kalender.dart';
@@ -26,11 +28,10 @@ class _calenderViewState extends State<calenderView> {
   final CalendarEventsController<Event> eventController =
       CalendarEventsController<Event>();
 
-  late ViewConfiguration currentConfiguration = viewConfigurations[2];
+  late ViewConfiguration currentConfiguration = viewConfigurations[3];
   List<ViewConfiguration> viewConfigurations = [
     CustomMultiDayConfiguration(
-
-      showMultiDayHeader: false ,
+      showMultiDayHeader: false,
       name: 'Day',
       numberOfDays: 1,
       startHour: 6,
@@ -38,7 +39,7 @@ class _calenderViewState extends State<calenderView> {
       createEvents: false,
     ),
     WeekConfiguration(
-      showMultiDayHeader: true ,
+      showMultiDayHeader: true,
       startHour: 6,
       endHour: 24,
       createEvents: false,
@@ -83,7 +84,7 @@ class _calenderViewState extends State<calenderView> {
 
     return SafeArea(
       child: Scaffold(
-        body:this.isLoading ? staticVar.loading() : calendar,
+        body: this.isLoading ? staticVar.loading() : calendar,
       ),
     );
   }
@@ -124,19 +125,22 @@ class _calenderViewState extends State<calenderView> {
                 dateTimeRange: DateTimeRange(
                   start: e["appointmentDate"].toDate() ?? DateTime.now(),
                   end: e["finishedDate"]?.toDate() ??
-                      (e["appointmentDate"]?.toDate()?.add(Duration(days: 5)) ?? DateTime.now().add(Duration(days: 25)))
-
-                  ,
+                      (e["appointmentDate"]?.toDate()?.add(Duration(days: 5)) ??
+                          DateTime.now().add(Duration(days: 25))),
                 ),
                 eventData: Event(
-                  orderData: e ?? {} ,
-                  date:staticVar.formatDateFromTimestamp(e["appointmentDate"] ?? "")  ,
-                  title: e["carModel"]?? "404Notfound" ,
-                  color: staticVar.getNextColor() , //staticVar.getOrderStatusColor(status2: e["status"] ?? "404"),
+                    orderData: e ?? {},
+                    date: staticVar
+                        .formatDateFromTimestamp(e["appointmentDate"] ?? ""),
+                    title: e["carModel"] ?? "404Notfound",
+                    color: staticVar.getNextColor(),
+                    //staticVar.getOrderStatusColor(status2: e["status"] ?? "404"),
                     employee: e["empName"] ?? "404Notfound",
-                  servises: e["selectedServices"]?.map((e) => e["serviceName"])?.toList()?.toString() ?? "404Eror"
-
-                ),
+                    servises: e["selectedServices"]
+                            ?.map((e) => e["serviceName"])
+                            ?.toList()
+                            ?.toString() ??
+                        "404Eror"),
               ))
           .toList());
 
@@ -156,7 +160,8 @@ class _calenderViewState extends State<calenderView> {
   Future<void> _onEventTapped(
     CalendarEvent<Event> event,
   ) async {
-    MyDialog.showOrderDetailsPopup(context: context, orderData: event.eventData!.orderData);
+    MyDialog.showOrderDetailsPopup(
+        context: context, orderData: event.eventData!.orderData);
     //print(event.eventData!.title.toString());
   }
 
@@ -246,7 +251,6 @@ class _calenderViewState extends State<calenderView> {
                   ),
                 ),
               ),
-
             if (event.eventData?.date != null)
               Expanded(
                 child: Padding(
@@ -254,10 +258,9 @@ class _calenderViewState extends State<calenderView> {
                   child: Text(
                     event.eventData!.date!,
                     style: TextStyle(
-                      color: Colors.white.withOpacity(0.8),
-                      fontSize: 14,
-                      fontWeight: FontWeight.bold
-                    ),
+                        color: Colors.white.withOpacity(0.8),
+                        fontSize: 14,
+                        fontWeight: FontWeight.bold),
                   ),
                 ),
               ),
@@ -268,10 +271,9 @@ class _calenderViewState extends State<calenderView> {
                   child: Text(
                     event.eventData!.servises!,
                     style: TextStyle(
-                      color: Colors.white.withOpacity(0.8),
-                      fontSize: 14,
-                        fontWeight: FontWeight.bold
-                    ),
+                        color: Colors.white.withOpacity(0.8),
+                        fontSize: 14,
+                        fontWeight: FontWeight.bold),
                   ),
                 ),
               ),
@@ -282,35 +284,79 @@ class _calenderViewState extends State<calenderView> {
   }
 
   Widget _calendarHeader(DateTimeRange dateTimeRange) {
-    return Row(
-      children: [
-        DropdownMenu(
-          onSelected: (value) {
-            if (value == null) return;
-            setState(() {
-              currentConfiguration = value;
-            });
-          },
-          initialSelection: currentConfiguration,
-          dropdownMenuEntries: viewConfigurations
-              .map((e) => DropdownMenuEntry(value: e, label: e.name))
-              .toList(),
-        ),
-        IconButton.filledTonal(
-          onPressed: controller.animateToPreviousPage,
-          icon: const Icon(Icons.navigate_before_rounded),
-        ),
-        IconButton.filledTonal(
-          onPressed: controller.animateToNextPage,
-          icon: const Icon(Icons.navigate_next_rounded),
-        ),
-        IconButton.filledTonal(
-          onPressed: () {
-            controller.animateToDate(DateTime.now());
-          },
-          icon: const Icon(Icons.today),
-        ),
-      ],
+    return Container(
+      //color: Color(0xFF2C3E50),
+      child: Row(
+        children: [
+          Padding(
+            padding: const EdgeInsets.all(8.0),
+            child: DropdownMenu(
+              menuStyle: MenuStyle(
+                backgroundColor:
+                    MaterialStateColor.resolveWith((states) => Colors.white),
+              ),
+              onSelected: (value) {
+                if (value == null) return;
+                setState(() {
+                  currentConfiguration = value;
+                });
+              },
+              initialSelection: currentConfiguration,
+              dropdownMenuEntries: viewConfigurations
+                  .map((e) => DropdownMenuEntry(value: e, label: e.name))
+                  .toList(),
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsets.all(8.0),
+            child: Container(
+              width: staticVar.fullWidth(context) * .15,
+              height: staticVar.fullhigth(context) * .05,
+              decoration: BoxDecoration(
+                  color: Color(0xFF1ABC9C),
+                  borderRadius: BorderRadius.circular(10)
+              ),
+              child: Center(child: Text(staticVar.formatDateFromTimestamp(controller.selectedDate),style: TextStyle(color: Colors.white , fontWeight: FontWeight.bold),)),
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsets.all(8.0),
+            child: IconButton(
+              style: ButtonStyle(
+                  backgroundColor: MaterialStateColor.resolveWith(
+                      (states) => Color(0xFF1ABC9C))),
+              color: Colors.white,
+              onPressed: controller.animateToPreviousPage,
+              icon: const Icon(Icons.navigate_before_rounded),
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsets.all(8.0),
+            child: IconButton.filledTonal(
+              style: ButtonStyle(
+                  backgroundColor: MaterialStateColor.resolveWith(
+                      (states) => Color(0xFF1ABC9C))),
+              color: Colors.white,
+              onPressed: controller.animateToNextPage,
+              icon: const Icon(Icons.navigate_next_rounded),
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsets.all(8.0),
+            child: IconButton.filledTonal(
+              style: ButtonStyle(
+                  backgroundColor: MaterialStateColor.resolveWith(
+                      (states) => Color(0xFF1ABC9C))),
+              color: Colors.white,
+              onPressed: () {
+                controller.animateToDate(DateTime.now());
+              },
+              icon: const Icon(Icons.today),
+            ),
+          ),
+
+        ],
+      ),
     );
   }
 }
@@ -327,16 +373,15 @@ class Event {
 
   final String employee;
 
-  final String date ;
+  final String date;
 
-  final Map<String,dynamic> orderData ;
+  final Map<String, dynamic> orderData;
 
   Event(
       {required this.title,
       required this.color,
       required this.employee,
-      required this.servises ,
-      required this.date ,
-        required this.orderData
-      });
+      required this.servises,
+      required this.date,
+      required this.orderData});
 }

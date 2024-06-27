@@ -23,8 +23,6 @@ class _employeePageState extends State<employeePage> {
   bool editMode = false;
   bool empDetailsMode = false ;
 
-
-
   String employeeName = "";
   String percentage = "";
   String phoneNr = "" ;
@@ -33,7 +31,6 @@ class _employeePageState extends State<employeePage> {
   List<Map<String, dynamic>> ordersfromFirebase = [];
   List<Map<String, dynamic>> ordersfromFirebaseFilterdByEmpId = [];
   Map<String, dynamic> empDetails = {} ;
-
   Map<String,dynamic> editDataMode = {};
 
   @override
@@ -129,8 +126,10 @@ class _employeePageState extends State<employeePage> {
 
     ) :
 
-    /// THe init page              <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
-    this.isLoading ? staticVar.loading()  : Animate(
+
+    this.isLoading ? staticVar.loading()  :
+    /// THe init page
+    Animate(
       effects: [FadeEffect(duration: Duration(milliseconds: 900))],
       child: Scaffold(
         floatingActionButton: editMode ?
@@ -218,6 +217,7 @@ class _employeePageState extends State<employeePage> {
                 ),
                 SizedBox(height: 16.0),
                 customTextFieldWidget(
+                  isItDiscount: true,
                   suffex: "%",
                   editMode: true,
                   initialValue:editDataMode["empPercentage"].toString() ?? "404NotFound" ,
@@ -266,6 +266,7 @@ class _employeePageState extends State<employeePage> {
                 ),
                 SizedBox(height: 16.0),
                 customTextFieldWidget(
+                  isItDiscount: true,
                   suffex: "%",
                   label: 'Preț Serviciu',
                   hintText: 'Introduceți prețul serviciului',

@@ -22,7 +22,7 @@ class _calenderViewState extends State<calenderView> {
   final CalendarController<Event> controller = CalendarController(
     calendarDateTimeRange: DateTimeRange(
       start: DateTime(DateTime.now().year - 1),
-      end: DateTime(DateTime.now().year + 1),
+      end: DateTime(DateTime.now().year + 4),
     ),
   );
   final CalendarEventsController<Event> eventController =
@@ -322,6 +322,7 @@ class _calenderViewState extends State<calenderView> {
           Padding(
             padding: const EdgeInsets.all(8.0),
             child: IconButton(
+              tooltip: "Întoarce-te la pagina anterioară",
               style: ButtonStyle(
                   backgroundColor: MaterialStateColor.resolveWith(
                       (states) => Color(0xFF1ABC9C))),
@@ -333,6 +334,7 @@ class _calenderViewState extends State<calenderView> {
           Padding(
             padding: const EdgeInsets.all(8.0),
             child: IconButton.filledTonal(
+              tooltip: "Mergi la pagina următoare",
               style: ButtonStyle(
                   backgroundColor: MaterialStateColor.resolveWith(
                       (states) => Color(0xFF1ABC9C))),
@@ -344,6 +346,7 @@ class _calenderViewState extends State<calenderView> {
           Padding(
             padding: const EdgeInsets.all(8.0),
             child: IconButton.filledTonal(
+              tooltip: "Mergi la ziua curentă",
               style: ButtonStyle(
                   backgroundColor: MaterialStateColor.resolveWith(
                       (states) => Color(0xFF1ABC9C))),

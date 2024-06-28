@@ -343,35 +343,35 @@ class _ordersState extends State<orders> {
                                       crossAxisAlignment:
                                           CrossAxisAlignment.start,
                                       children: [
-                                        Row(
-                                          mainAxisAlignment:
-                                              MainAxisAlignment.start,
-                                          children: [
-                                            Text(
-                                              'modul angajat',
-                                              style: TextStyle(
-                                                fontSize: 18.0,
-                                              ),
-                                            ),
-                                            Switch(
-                                              value: this.specifecEmployeeMode,
-                                              onChanged: (bool value) {
-                                                setState(() {
-                                                  this.specifecEmployeeMode =
-                                                      value;
-                                                });
-                                              },
-                                              activeColor: Color(
-                                                  0xFF1ABC9C), // color when switch is on
-                                            ),
-                                          ],
-                                        ),
-                                        Text(
-                                          "Când vei activa acest comutator, doar angajatul pe care l-ai semnat va accepta comanda.",
-                                          style: TextStyle(
-                                              fontSize: 14.0,
-                                              color: Colors.grey),
-                                        ),
+                                        // Row(
+                                        //   mainAxisAlignment:
+                                        //       MainAxisAlignment.start,
+                                        //   children: [
+                                        //     Text(
+                                        //       'modul angajat',
+                                        //       style: TextStyle(
+                                        //         fontSize: 18.0,
+                                        //       ),
+                                        //     ),
+                                        //     Switch(
+                                        //       value: this.specifecEmployeeMode,
+                                        //       onChanged: (bool value) {
+                                        //         setState(() {
+                                        //           this.specifecEmployeeMode =
+                                        //               value;
+                                        //         });
+                                        //       },
+                                        //       activeColor: Color(
+                                        //           0xFF1ABC9C), // color when switch is on
+                                        //     ),
+                                        //   ],
+                                        // ),
+                                        // Text(
+                                        //   "Când vei activa acest comutator, doar angajatul pe care l-ai semnat va accepta comanda.",
+                                        //   style: TextStyle(
+                                        //       fontSize: 14.0,
+                                        //       color: Colors.grey),
+                                        // ),
                                       ],
                                     ),
                                     SizedBox(
@@ -809,6 +809,71 @@ class _ordersState extends State<orders> {
                                                 ),
                                               ),
                                             ),
+                                            SizedBox(
+                                              height: 16,
+                                            ),
+                                            Column(
+                                              crossAxisAlignment: CrossAxisAlignment.start,
+                                              children: [
+                                                Text("Servicii" , style: TextStyle(
+                                                  fontSize: 16,
+                                                  fontWeight: FontWeight.bold,
+                                                  color: Color(0xFF2c3e50), // Text color
+                                                ), ),
+                                                Container(
+                                                  width: MediaQuery.of(context)
+                                                      .size
+                                                      .width *
+                                                      0.3,
+                                                  child: MultiSelectDropDown(
+                                                    showChipInSingleSelectMode:
+                                                    true,
+                                                    //   controller: _controller,
+                                                    onOptionSelected: (options) {
+                                                      this.selectedServices =
+                                                          options.map((e) {
+                                                            return e.value
+                                                            as Map<String, dynamic>;
+                                                          }).toList();
+                                                      setState(() {});
+                                                      //debugPrint(options.first.value.toString());
+                                                    },
+                                                    options: this
+                                                        .servicesfromFirebase
+                                                        .map<ValueItem>((e) {
+                                                      //{price: 700,
+                                                      // addedAt: ,
+                                                      // serviceName: Detailing the exterior - medie,
+                                                      // isContract: true,
+                                                      // docId: 4Kg6bRfbfnLCm21CQlRw}
+
+                                                      String label = e["isContract"]
+                                                          ? e["serviceName"] +
+                                                          "--" +
+                                                          "B2B"
+                                                          : e["serviceName"];
+                                                      return ValueItem(
+                                                          label: label, value: e);
+                                                    }).toList(),
+                                                    maxItems: 5,
+                                                    selectionType:
+                                                    SelectionType.multi,
+                                                    chipConfig: const ChipConfig(
+                                                        wrapType: WrapType.wrap,
+                                                        backgroundColor:
+                                                        Color(0xFF1ABC9C)),
+                                                    dropdownHeight: 300,
+                                                    optionTextStyle:
+                                                    const TextStyle(
+                                                        fontSize: 16),
+                                                    selectedOptionIcon: const Icon(
+                                                      Icons.check_circle,
+                                                      color: Color(0xFF1ABC9C),
+                                                    ),
+                                                  ),
+                                                ),
+                                              ],
+                                            ),
                                             // payment status
                                             SizedBox(
                                               height: 16,
@@ -933,58 +998,7 @@ class _ordersState extends State<orders> {
                                             SizedBox(
                                               height: 16,
                                             ),
-                                            Container(
-                                              width: MediaQuery.of(context)
-                                                      .size
-                                                      .width *
-                                                  0.3,
-                                              child: MultiSelectDropDown(
-                                                showChipInSingleSelectMode:
-                                                    true,
-                                                //   controller: _controller,
-                                                onOptionSelected: (options) {
-                                                  this.selectedServices =
-                                                      options.map((e) {
-                                                    return e.value
-                                                        as Map<String, dynamic>;
-                                                  }).toList();
-                                                  setState(() {});
-                                                  //debugPrint(options.first.value.toString());
-                                                },
-                                                options: this
-                                                    .servicesfromFirebase
-                                                    .map<ValueItem>((e) {
-                                                  //{price: 700,
-                                                  // addedAt: ,
-                                                  // serviceName: Detailing the exterior - medie,
-                                                  // isContract: true,
-                                                  // docId: 4Kg6bRfbfnLCm21CQlRw}
 
-                                                  String label = e["isContract"]
-                                                      ? e["serviceName"] +
-                                                          "--" +
-                                                          "B2B"
-                                                      : e["serviceName"];
-                                                  return ValueItem(
-                                                      label: label, value: e);
-                                                }).toList(),
-                                                maxItems: 5,
-                                                selectionType:
-                                                    SelectionType.multi,
-                                                chipConfig: const ChipConfig(
-                                                    wrapType: WrapType.wrap,
-                                                    backgroundColor:
-                                                        Color(0xFF1ABC9C)),
-                                                dropdownHeight: 300,
-                                                optionTextStyle:
-                                                    const TextStyle(
-                                                        fontSize: 16),
-                                                selectedOptionIcon: const Icon(
-                                                  Icons.check_circle,
-                                                  color: Color(0xFF1ABC9C),
-                                                ),
-                                              ),
-                                            ),
                                           ],
                                         ),
                                         SizedBox(

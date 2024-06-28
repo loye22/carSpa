@@ -38,6 +38,7 @@ class MyApp extends StatelessWidget {
       DeviceOrientation.portraitDown,
     ]);
     return MaterialApp(
+
       theme: ThemeData(
         //scaffoldBackgroundColor: Color(0xFF2c3e50), // Sidebar background color
         textTheme: TextTheme(
@@ -47,7 +48,7 @@ class MyApp extends StatelessWidget {
         ),
       ),
       title: "Car SPA",
-       debugShowCheckedModeBanner: false,
+       debugShowCheckedModeBanner: true ,
       home: StreamBuilder(
         stream: FirebaseAuth.instance.authStateChanges(),
         builder: (BuildContext context, AsyncSnapshot<dynamic> snapshot)  {

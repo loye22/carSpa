@@ -42,8 +42,8 @@ class MyApp extends StatelessWidget {
       theme: ThemeData(
         //scaffoldBackgroundColor: Color(0xFF2c3e50), // Sidebar background color
         textTheme: TextTheme(
-          bodyText1: TextStyle(color: Color(0xFF2C3E50)), // Text color for body
-          bodyText2: TextStyle(color: Color(0xFF2C3E50)), // Text color for body
+          // bodyText1: TextStyle(color: Color(0xFF2C3E50)), // Text color for body
+          // bodyText2: TextStyle(color: Color(0xFF2C3E50)), // Text color for body
           // You can define additional text styles here as needed
         ),
       ),

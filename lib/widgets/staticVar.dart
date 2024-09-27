@@ -347,6 +347,29 @@ class staticVar {
     return statusColor;
   }
 
+  // this function will return small container represnt the emplyee paument status
+  static Widget empPaymentStatus({required bool status2 }) {
+    Color statusColor;
+    String statusText;
+
+    return Container(
+      padding: EdgeInsets.all(8.0),
+      decoration: BoxDecoration(
+        color:status2 ? Colors.green :  Colors.red,
+        borderRadius: BorderRadius.circular(8.0),
+      ),
+      child: Text(
+        status2 ? "Plătit"  : "Neplătit",
+        style: TextStyle(
+          color: Colors.white,
+          fontWeight: FontWeight.bold,
+        ),
+      ),
+    );
+  }
+
+
+
 
 
 
@@ -374,7 +397,12 @@ class staticVar {
   }
 
 
-static bool inRomanian = true  ;
+  static bool inRomanian = true  ;
+
+
+
+
+
 
 
 

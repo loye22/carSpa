@@ -1,25 +1,24 @@
 import 'dart:async';
+import 'package:car_spa/models/orderModels.dart';
 import 'package:car_spa/widgets/CustomDateTimePicker.dart';
 import 'package:car_spa/widgets/PriceSummaryCard.dart';
-import 'package:car_spa/widgets/button.dart';
 import 'package:car_spa/widgets/customTextFieldWidget.dart';
-import 'package:car_spa/widgets/dateCalnderPickUp.dart';
 import 'package:car_spa/widgets/dialog.dart';
 import 'package:car_spa/widgets/enum.dart';
-import 'package:car_spa/widgets/filterFeedBackWidget.dart';
 import 'package:car_spa/widgets/orderDetails.dart';
 import 'package:car_spa/widgets/staticVar.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:data_table_2/data_table_2.dart';
 import 'package:dropdown_button2/dropdown_button2.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_animate/flutter_animate.dart';
-import 'package:flutter_date_range_picker/flutter_date_range_picker.dart';
+
 import 'package:multi_dropdown/multiselect_dropdown.dart';
 import 'dart:convert' as json;
+
+import 'package:syncfusion_flutter_datagrid/datagrid.dart';
 
 class orders extends StatefulWidget {
   const orders({super.key});
@@ -91,6 +90,10 @@ class _ordersState extends State<orders> {
 
   bool dateFilterMode = false;
 
+  List<orderModel> ordersListTodisplay = [];
+  late ordersDataSource ordersDataSources;
+  List<Map<String, dynamic>> ordersHelperListTOShowDetails = [];
+
   @override
   void initState() {
     // TODO: implement initState
@@ -99,6 +102,7 @@ class _ordersState extends State<orders> {
     ordersFromFirrbase();
     fetchB2BData();
     fetchEmployee();
+    ordersDataSources = ordersDataSource(orders: ordersListTodisplay);
   }
 
   @override
@@ -112,33 +116,43 @@ class _ordersState extends State<orders> {
                 ? Column(
                     mainAxisAlignment: MainAxisAlignment.end,
                     children: [
-                      if(this.orderDataToDisplay["status"] == orderStatus.pending.toString()&& this.orderDataToDisplay["entranceDate"]  == null )
-                      Tooltip(
-                        message: 'Înregistrează intrarea mașinii',
-                        child: FloatingActionButton(
-                          backgroundColor:Colors.lightBlueAccent ,
-                          onPressed:_updateCarEnternceDate,
-                          child: Icon(Icons.car_crash , color: Colors.white,), // Icon inside the FAB
+                      if (this.orderDataToDisplay["status"] ==
+                              orderStatus.pending.toString() &&
+                          this.orderDataToDisplay["entranceDate"] == null)
+                        Tooltip(
+                          message: 'Înregistrează intrarea mașinii',
+                          child: FloatingActionButton(
+                            backgroundColor: Colors.lightBlueAccent,
+                            onPressed: _updateCarEnternceDate,
+                            child: Icon(
+                              Icons.car_crash,
+                              color: Colors.white,
+                            ), // Icon inside the FAB
+                          ),
                         ),
+                      SizedBox(
+                        height: 10,
                       ),
-                      SizedBox(height: 10,),
-                      if((this.orderDataToDisplay["paymentStatus"] ?? false )== PaymentStatus.paid.toString()
-                          &&
-                          (this.orderDataToDisplay["status"]  ?? false )!= orderStatus.canceled.toString()
-                          &&
-                          (this.orderDataToDisplay["status"]  ?? false )!= orderStatus.completed.toString()
+                      if ((this.orderDataToDisplay["paymentStatus"] ?? false) ==
+                              PaymentStatus.paid.toString() &&
+                          (this.orderDataToDisplay["status"] ?? false) !=
+                              orderStatus.canceled.toString() &&
+                          (this.orderDataToDisplay["status"] ?? false) !=
+                              orderStatus.completed.toString())
 
-                      )
                         /// This button gonna update the order status to completed
                         /// this button will be shown only if the order is apied fully and the order is not on cancel state
-                      Tooltip(
-                        message: 'Acest buton este pentru a completa comanda',
-                        child: FloatingActionButton(
-                          backgroundColor: Color(0xFF1ABC9C),
-                          onPressed: _completeOrder,
-                          child: Icon(Icons.assignment_turned_in ,color: Colors.white,),
+                        Tooltip(
+                          message: 'Acest buton este pentru a completa comanda',
+                          child: FloatingActionButton(
+                            backgroundColor: Color(0xFF1ABC9C),
+                            onPressed: _completeOrder,
+                            child: Icon(
+                              Icons.assignment_turned_in,
+                              color: Colors.white,
+                            ),
+                          ),
                         ),
-                      ),
                       SizedBox(
                         height: 10,
                       ),
@@ -576,12 +590,10 @@ class _ordersState extends State<orders> {
                                             hintText: 'Enter Discount',
                                             suffex: "%",
                                             onChanged: (value) {
-
                                               setState(() {
                                                 discount =
                                                     int.tryParse(value) ?? 0;
                                               });
-
                                             },
                                           ),
                                         ),
@@ -813,28 +825,34 @@ class _ordersState extends State<orders> {
                                               height: 16,
                                             ),
                                             Column(
-                                              crossAxisAlignment: CrossAxisAlignment.start,
+                                              crossAxisAlignment:
+                                                  CrossAxisAlignment.start,
                                               children: [
-                                                Text("Servicii" , style: TextStyle(
-                                                  fontSize: 16,
-                                                  fontWeight: FontWeight.bold,
-                                                  color: Color(0xFF2c3e50), // Text color
-                                                ), ),
+                                                Text(
+                                                  "Servicii",
+                                                  style: TextStyle(
+                                                    fontSize: 16,
+                                                    fontWeight: FontWeight.bold,
+                                                    color: Color(
+                                                        0xFF2c3e50), // Text color
+                                                  ),
+                                                ),
                                                 Container(
                                                   width: MediaQuery.of(context)
-                                                      .size
-                                                      .width *
+                                                          .size
+                                                          .width *
                                                       0.3,
                                                   child: MultiSelectDropDown(
                                                     showChipInSingleSelectMode:
-                                                    true,
+                                                        true,
                                                     //   controller: _controller,
-                                                    onOptionSelected: (options) {
+                                                    onOptionSelected:
+                                                        (options) {
                                                       this.selectedServices =
                                                           options.map((e) {
-                                                            return e.value
-                                                            as Map<String, dynamic>;
-                                                          }).toList();
+                                                        return e.value as Map<
+                                                            String, dynamic>;
+                                                      }).toList();
                                                       setState(() {});
                                                       //debugPrint(options.first.value.toString());
                                                     },
@@ -847,26 +865,29 @@ class _ordersState extends State<orders> {
                                                       // isContract: true,
                                                       // docId: 4Kg6bRfbfnLCm21CQlRw}
 
-                                                      String label = e["isContract"]
+                                                      String label = e[
+                                                              "isContract"]
                                                           ? e["serviceName"] +
-                                                          "--" +
-                                                          "B2B"
+                                                              "--" +
+                                                              "B2B"
                                                           : e["serviceName"];
                                                       return ValueItem(
-                                                          label: label, value: e);
+                                                          label: label,
+                                                          value: e);
                                                     }).toList(),
                                                     maxItems: 5,
                                                     selectionType:
-                                                    SelectionType.multi,
+                                                        SelectionType.multi,
                                                     chipConfig: const ChipConfig(
                                                         wrapType: WrapType.wrap,
                                                         backgroundColor:
-                                                        Color(0xFF1ABC9C)),
+                                                            Color(0xFF1ABC9C)),
                                                     dropdownHeight: 300,
                                                     optionTextStyle:
-                                                    const TextStyle(
-                                                        fontSize: 16),
-                                                    selectedOptionIcon: const Icon(
+                                                        const TextStyle(
+                                                            fontSize: 16),
+                                                    selectedOptionIcon:
+                                                        const Icon(
                                                       Icons.check_circle,
                                                       color: Color(0xFF1ABC9C),
                                                     ),
@@ -981,16 +1002,26 @@ class _ordersState extends State<orders> {
                                                     label: "plată în avans",
                                                     hintText: "... Ron",
                                                     onChanged: (value) {
-                                                      double advancePayment = double.tryParse(value) ?? 0.0;
-                                                      double totalPriceSummry = double.tryParse(this.priceSummryDetails["totalWithVat"] ?? "0.0") ?? 0.0;
-                                                      if (advancePayment >= totalPriceSummry) {
+                                                      double advancePayment =
+                                                          double.tryParse(
+                                                                  value) ??
+                                                              0.0;
+                                                      double totalPriceSummry =
+                                                          double.tryParse(
+                                                                  this.priceSummryDetails[
+                                                                          "totalWithVat"] ??
+                                                                      "0.0") ??
+                                                              0.0;
+                                                      if (advancePayment >=
+                                                          totalPriceSummry) {
                                                         MyDialog.showAlert(
                                                             context,
                                                             "Ok",
                                                             "Plata în avans pe care ați introdus-o este egală sau mai mare decât factura totală. Vă rugăm să vă asigurați că introduceți o plată în avans validă");
                                                         advancePayment = 0.0;
                                                       }
-                                                      this.advancedPayment = advancePayment;
+                                                      this.advancedPayment =
+                                                          advancePayment;
                                                       setState(() {});
                                                     })
                                                 : SizedBox.shrink(),
@@ -998,7 +1029,6 @@ class _ordersState extends State<orders> {
                                             SizedBox(
                                               height: 16,
                                             ),
-
                                           ],
                                         ),
                                         SizedBox(
@@ -1041,225 +1071,112 @@ class _ordersState extends State<orders> {
                   )
                 :
                 // this part will show all the oders
-                Animate(
-                    effects: [
-                      FadeEffect(duration: Duration(milliseconds: 1200))
-                    ],
-                    child: this.showOrderDetailsMode
-                        ? orderDetails(data: orderDataToDisplay)
-                        : Column(
-                            mainAxisAlignment: MainAxisAlignment.end,
-                            children: [
-                              /// this row gonna handel the filters
+                (showOrderDetailsMode
+                    ? orderDetails(data: orderDataToDisplay)
+                    : Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                        children: [
+                          Text(
+                            "Orders tabel ",
+                            style: TextStyle(fontSize: 24),
+                          ),
+                          Padding(
+                            padding: const EdgeInsets.all(8.0),
+                            child: Container(
+                              height: staticVar.fullhigth(context) * .85,
+                              decoration: BoxDecoration(
+                                  borderRadius: BorderRadius.circular(30),
+                                  border:
+                                      Border.all(color: Colors.grey, width: 1)),
+                              clipBehavior: Clip.hardEdge,
+                              child: SfDataGrid(
+                                showCheckboxColumn: true,
+                                // showColumnHeaderIconOnHover: true,
+                                onCellTap: (details) {
+                                  int selectedRowIndex =
+                                      details.rowColumnIndex.rowIndex - 1;
 
-                              Row(
-                                children: [
-                                  /// disable this of its on employee filter mode
-                                  this.filterMode
-                                      ? SizedBox.shrink()
-                                      : dateCalnderPickUp(onDateRangeChanged:(dateRange, filterdList) {
-                                    this.filterdOrders =filterdList;
-                                    this.dateFilterMode = true;
-                                    this.startDateRangeFilter = dateRange?.start;
-                                    this.endDateRangeFilter = dateRange?.end;
+                                  /// now we want to extract the the row docID,after that we will use it to extract the whole document data from the list
+                                  var row = ordersDataSources.effectiveRows
+                                      .elementAt(selectedRowIndex);
 
-                                    setState(() {});
+                                  /// The doc id extraction
+                                  String docID =
+                                      row.getCells()[7].value.toString();
+                                  // print(docID);
+                                  /// fetch the order with exact doc id
+                                  Map<String, dynamic> e = this
+                                      .ordersHelperListTOShowDetails
+                                      .firstWhere((e) => e["docId"] == docID);
+                                  this.orderDataToDisplay = e ?? {};
+                                  this.showOrderDetailsMode = true;
+                                  setState(() {});
 
-                                  }, ordersfromFirebase: this.ordersfromFirebase,),
-                                  // Tooltip(
-                                  //         message:
-                                  //             "Filtrează după interval de date",
-                                  //         child: IconButton(
-                                  //           onPressed: showCalender,
-                                  //           icon: Icon(
-                                  //             Icons.calendar_month_sharp,
-                                  //             size: 40,
-                                  //           ),
-                                  //           color: Color(0xFF1abc9c),
-                                  //         )),
-                                  SizedBox(
-                                    width: 25,
-                                  ),
+                                  //  print(row.getCells()[9].value);
 
-                                  this.dateFilterMode
-                                      ? SizedBox.shrink()
-                                      : Padding(
-                                          padding: const EdgeInsets.all(8.0),
-                                          child: Container(
-                                            width: MediaQuery.of(context)
-                                                    .size
-                                                    .width *
-                                                0.2,
-                                            //  height: 100,
-                                            child: DropdownButtonFormField2<
-                                                String>(
-                                              isExpanded: true,
-                                              decoration: InputDecoration(
-                                                label: Text("Angajatul"),
-                                                // Add Horizontal padding using menuItemStyleData.padding so it matches
-                                                // the menu padding when button's width is not specified.
-                                                contentPadding:
-                                                    const EdgeInsets.symmetric(
-                                                        vertical: 16),
-                                                border: OutlineInputBorder(
-                                                  borderRadius:
-                                                      BorderRadius.circular(15),
-                                                ),
-                                                // Add more decoration..
-                                              ),
-                                              hint: const Text(
-                                                "Filtrează comenzile în funcție de angajat.",
-                                                style: TextStyle(fontSize: 14),
-                                              ),
-                                              items: this
-                                                  .employeefromFirebase
-                                                  .map((item) =>
-                                                      DropdownMenuItem<String>(
-                                                        value: item["docId"],
-                                                        child: Text(
-                                                          item["empName"],
-                                                          style:
-                                                              const TextStyle(
-                                                            fontSize: 14,
-                                                          ),
-                                                        ),
-                                                      ))
-                                                  .toList(),
-                                              onChanged: (value) {
-                                                this.filterdOrders =
-                                                    filterByEmployeeID(
-                                                        orders: this
-                                                            .ordersfromFirebase,
-                                                        empId: value ?? "");
-                                                this.filterMode = true;
-                                                this.filteredEmp = this
-                                                        .employeefromFirebase
-                                                        .where((e) =>
-                                                            e["docId"] == value)
-                                                        .first["empName"] ??
-                                                    "404NotFound";
-                                                setState(() {});
-                                              },
-                                              buttonStyleData:
-                                                  const ButtonStyleData(
-                                                padding:
-                                                    EdgeInsets.only(right: 8),
-                                              ),
-                                              iconStyleData:
-                                                  const IconStyleData(
-                                                icon: Icon(
-                                                  Icons.arrow_drop_down,
-                                                  color: Colors.black45,
-                                                ),
-                                                iconSize: 24,
-                                              ),
-                                              dropdownStyleData:
-                                                  DropdownStyleData(
-                                                decoration: BoxDecoration(
-                                                  borderRadius:
-                                                      BorderRadius.circular(15),
-                                                ),
-                                              ),
-                                              menuItemStyleData:
-                                                  const MenuItemStyleData(
-                                                padding: EdgeInsets.symmetric(
-                                                    horizontal: 16),
-                                              ),
-                                            ),
-                                          ),
-                                        ),
-                                  SizedBox(
-                                    width: 25,
-                                  ),
-                                  if (this.filterMode)
-                                    Animate(
-                                        effects: [SlideEffect()],
-                                        child: filterFeedBack(
-                                            filterName: this.filteredEmp)),
-                                  if (this.dateFilterMode)
-                                    Animate(
-                                      effects: [SlideEffect()],
-                                      child: filterFeedBack(
-                                          filterName:
-                                              " ${staticVar.formatDateFromTimestamp(this.startDateRangeFilter)}   >>>  ${staticVar.formatDateFromTimestamp(this.endDateRangeFilter)} "),
-                                    )
+                                  // showInvoiceDetails(
+                                  //     context, row.getCells()[9].value);
+                                },
+                                columnWidthMode: ColumnWidthMode.fill,
+                                // headerRowHeight: ,
+                                allowSorting: true,
+                                allowFiltering: true,
+                                source: ordersDataSources,
+                                columns: <GridColumn>[
+                                  GridColumn(
+                                      columnName: 'carModel',
+                                      label: Container(
+                                          alignment: Alignment.centerRight,
+                                          child: Text(
+                                            'Model de mașină',
+                                          ))),
+                                  GridColumn(
+                                      columnName: 'paymentStatus',
+                                      label: Container(
+                                          alignment: Alignment.centerRight,
+                                          child: Text('Stare plată'))),
+                                  GridColumn(
+                                      columnName: 'orderStatus',
+                                      label: Container(
+                                          alignment: Alignment.centerRight,
+                                          child: Text('Stare comandă'))),
+                                  GridColumn(
+                                      columnName: 'orderSchedule',
+                                      label: Container(
+                                          alignment: Alignment.centerRight,
+                                          child: Text('Programare comandă'))),
+                                  GridColumn(
+                                      columnName: 'orderIssueDate',
+                                      label: Container(
+                                          alignment: Alignment.centerRight,
+                                          child: Text('Data emiterii comenzii'))),
+                                  GridColumn(
+                                      columnName: 'employeeWhoWashIt',
+                                      label: Container(
+                                          alignment: Alignment.centerRight,
+                                          child: Text('Atribuit lui'))),
+                                  GridColumn(
+                                      columnName: 'employeePaymentStatus',
+                                      label: Container(
+                                          alignment: Alignment.centerRight,
+                                          child:
+                                              Text('Stare plată angajat'))),
+                                  GridColumn(
+                                      columnName: 'DBID',
+                                      label: Container(
+                                          alignment: Alignment.centerRight,
+                                          child: Text('DBID'))),
                                 ],
                               ),
-                              Container(
-                                  width: staticVar.golobalWidth(context),
-                                  height: staticVar.fullhigth(context) * .9,
-                                  decoration: BoxDecoration(
-                                      //    border: Border.all(color: Colors.black.withOpacity(.33)),
-                                      borderRadius: BorderRadius.circular(10),
-                                      color: Colors.white),
-                                  child: Card(
-                                      elevation: 1,
-                                      child: Center(
-                                        child: DataTable2(
-                                            columnSpacing: 5,
-                                            columns: [
-                                              staticVar.Dc("Model de mașină"),
-                                              staticVar.Dc("statusul plății"),
-                                              staticVar.Dc("statusul comenzii"),
-                                              staticVar.Dc("data adăugată"),
-                                              staticVar.Dc("programare")
-                                            ],
-                                            rows: (this.filterMode ||
-                                                        this.dateFilterMode
-                                                    ? this.filterdOrders
-                                                    : this.ordersfromFirebase)
-                                                .map((e) {
-                                              String carModeMap =
-                                                  e["carModel"] ??
-                                                      "404Notfound";
-                                              String paymentStatusMap =
-                                                  e["paymentStatus"] ??
-                                                      "404Notfound";
-                                              String orderStatusMap =
-                                                  e["status"] ?? "404Notfound";
-                                              String addedDate = staticVar
-                                                      .formatDateFromTimestamp(
-                                                          e["issuedDate"]) ??
-                                                  "404Notfound";
-                                              String appotimentMap = staticVar
-                                                      .formatDateFromTimestamp(e[
-                                                          "appointmentDate"]) ??
-                                                  "404Notfound";
-
-                                              return DataRow2(
-                                                  onTap: () {
-                                                    this.orderDataToDisplay =
-                                                        e ?? {};
-                                                    this.showOrderDetailsMode =
-                                                        true;
-                                                    setState(() {});
-                                                  },
-                                                  cells: [
-                                                    DataCell(Center(
-                                                        child:
-                                                            Text(carModeMap))),
-                                                    DataCell(Center(
-                                                        child: staticVar
-                                                             .getPaymentStatusWidget(
-                                                                status2:
-                                                                    paymentStatusMap))),
-                                                    DataCell(Center(
-                                                        child: staticVar
-                                                            .getOrderStatusWidget(
-                                                                status2:
-                                                                    orderStatusMap))),
-                                                    DataCell(Center(
-                                                        child:
-                                                            Text(addedDate))),
-                                                    DataCell(Center(
-                                                        child: Text(
-                                                            appotimentMap))),
-                                                  ]);
-                                            }).toList()),
-                                      ))),
-                            ],
+                            ),
                           ),
-                  )));
+                        ],
+                      ))
+
+
+
+            ));
   }
 
   /// these has been replaced by dateCalnderPickUp() widget the i have created
@@ -1335,9 +1252,6 @@ class _ordersState extends State<orders> {
   //   }).toList();
   // }
 
-
-
-
   /// this function gonna handel the filter by employee name
   List<Map<String, dynamic>> filterByEmployeeID(
       {required List<Map<String, dynamic>> orders, required String empId}) {
@@ -1351,18 +1265,18 @@ class _ordersState extends State<orders> {
   /// THis function gonna register the car entrence date in the car spa
   /// PLease note to update the status the status of the order must be pendding
   /// and the current date must be after the appotment
-  Future<void> _updateCarEnternceDate()async{
-
+  Future<void> _updateCarEnternceDate() async {
     showDialog(
       context: context,
       builder: (BuildContext context) {
         String docId = orderDataToDisplay["docId"] ?? "";
         return AlertDialog(
           backgroundColor: Colors.grey[850],
-          title:
-          Text('Înregistrare intrare mașină', style: TextStyle(color: Colors.white)),
-          content: Text("Asigurați-vă că mașina este introdusă corect în facilitatea de îngrijire auto. Vă rugăm să nu continuați dacă mașina nu este prezentă!",
-                style: TextStyle(color: Colors.white)),
+          title: Text('Înregistrare intrare mașină',
+              style: TextStyle(color: Colors.white)),
+          content: Text(
+              "Asigurați-vă că mașina este introdusă corect în facilitatea de îngrijire auto. Vă rugăm să nu continuați dacă mașina nu este prezentă!",
+              style: TextStyle(color: Colors.white)),
           actions: <Widget>[
             TextButton(
               child: Text('Cancel', style: TextStyle(color: Colors.white)),
@@ -1373,24 +1287,24 @@ class _ordersState extends State<orders> {
             TextButton(
               child: Text('Proceed', style: TextStyle(color: Colors.white)),
               onPressed: () async {
-                if(DateTime.now().isBefore(this.orderDataToDisplay["appointmentDate"].toDate())) {
-                  MyDialog.showAlert(context, "Ok", "Această comandă este programată pentru ${staticVar.formatDateFromTimestampWithTime(this.orderDataToDisplay["appointmentDate"])}. Nu poate fi finalizată acum.");
+                if (DateTime.now().isBefore(
+                    this.orderDataToDisplay["appointmentDate"].toDate())) {
+                  MyDialog.showAlert(context, "Ok",
+                      "Această comandă este programată pentru ${staticVar.formatDateFromTimestampWithTime(this.orderDataToDisplay["appointmentDate"])}. Nu poate fi finalizată acum.");
                   return;
                 }
-               await  _updateCarEnternceOnDataBase(docId: docId);
-               Navigator.of(context).pop();
-
+                await _updateCarEnternceOnDataBase(docId: docId);
+                Navigator.of(context).pop();
               },
             ),
           ],
         );
       },
     );
-
   }
 
-  Future<void> _updateCarEnternceOnDataBase({required String docId})async {
-    try{
+  Future<void> _updateCarEnternceOnDataBase({required String docId}) async {
+    try {
       /// Check if the current date and time (Datetime.now()) is before the appointment.
       /// If so, return because it doesn't make sense to finish the car before its appointment.
 
@@ -1398,61 +1312,59 @@ class _ordersState extends State<orders> {
       setState(() {});
       // Get reference to the document
       DocumentReference orderRef =
-      FirebaseFirestore.instance.collection('orders').doc(docId);
+          FirebaseFirestore.instance.collection('orders').doc(docId);
 
       // Update the status field of the document to 'canceled'
-      await orderRef.update({'entranceDate' : DateTime.now()});
+      await orderRef.update({'entranceDate': DateTime.now()});
       staticVar.showSubscriptionSnackbar(
           context: context, msg: "Starea plății a fost actualizată cu succes.");
       this.ordersFromFirrbase();
       this.showOrderDetailsMode = false;
       this.isLoading = false;
       setState(() {});
-
-    }
-    catch(e){
+    } catch (e) {
       MyDialog.showAlert(context, "Ok", "Error $e");
     }
-
-
-
   }
 
   /// this function will update the order status to completed
-  Future<void> _completeOrder() async{
+  Future<void> _completeOrder() async {
     try {
       /// Check if the current date and time (Datetime.now()) is before the appointment.
       /// If so, return because it doesn't make sense to finish the car before its appointment.
-      if(DateTime.now().isBefore(this.orderDataToDisplay["appointmentDate"].toDate())) {
-        MyDialog.showAlert(context, "Ok", "Această comandă este programată pentru ${staticVar.formatDateFromTimestampWithTime(this.orderDataToDisplay["appointmentDate"])}. Nu poate fi finalizată acum.");
+      if (DateTime.now()
+          .isBefore(this.orderDataToDisplay["appointmentDate"].toDate())) {
+        MyDialog.showAlert(context, "Ok",
+            "Această comandă este programată pentru ${staticVar.formatDateFromTimestampWithTime(this.orderDataToDisplay["appointmentDate"])}. Nu poate fi finalizată acum.");
         return;
       }
 
       this.isLoading = true;
       setState(() {});
       // Get reference to the document
-      DocumentReference orderRef =
-      FirebaseFirestore.instance.collection('orders').doc(this.orderDataToDisplay["docId"]);
-      await orderRef.update({'status': orderStatus.completed.toString() , 'finishedDate' : DateTime.now() });
+      DocumentReference orderRef = FirebaseFirestore.instance
+          .collection('orders')
+          .doc(this.orderDataToDisplay["docId"]);
+      await orderRef.update({
+        'status': orderStatus.completed.toString(),
+        'finishedDate': DateTime.now()
+      });
       staticVar.showSubscriptionSnackbar(
-          context: context, msg:"Comenzile au fost actualizate cu succes.");
-      this.isLoading = false ;
-      this.showOrderDetailsMode = false ;
+          context: context, msg: "Comenzile au fost actualizate cu succes.");
+      this.isLoading = false;
+      this.showOrderDetailsMode = false;
       ordersFromFirrbase();
       setState(() {});
-    }
-    catch(e){
-      this.isLoading = false ;
+    } catch (e) {
+      this.isLoading = false;
       setState(() {});
-      print('error $e') ;
+      print('error $e');
       MyDialog.showAlert(context, "Ok", "Error $e");
     }
-
-}
+  }
 
   /// this funciton will handel the payment status .... it will flip it to paid in case all the condtions are met
   Future<void> upadtePaymentStatus() async {
-
     /// this funciton will change the payment status to paid if these 2 cases are met
     /// 1. the orders is on pending or inProgress status
     /// 2. the paymetn status is unpaid or partchlly paid
@@ -1479,9 +1391,9 @@ class _ordersState extends State<orders> {
               title:
                   Text('Payment Status', style: TextStyle(color: Colors.white)),
               content: Text(
-                  staticVar.inRomanian ?
-                "Acum urmează să schimbați statusul plății acestei comenzi. Vă rugăm să vă asigurați că primiți ${totalPrice.toStringAsFixed(2)} RON de la client." :
-                  "You are now about to change the payment status of this order. Please make sure to receive ${totalPrice.toStringAsFixed(2)} RON from the client.",
+                  staticVar.inRomanian
+                      ? "Acum urmează să schimbați statusul plății acestei comenzi. Vă rugăm să vă asigurați că primiți ${totalPrice.toStringAsFixed(2)} RON de la client."
+                      : "You are now about to change the payment status of this order. Please make sure to receive ${totalPrice.toStringAsFixed(2)} RON from the client.",
                   style: TextStyle(color: Colors.white)),
               actions: <Widget>[
                 TextButton(
@@ -1516,9 +1428,9 @@ class _ordersState extends State<orders> {
               title:
                   Text('Payment Status', style: TextStyle(color: Colors.white)),
               content: Text(
-                  staticVar.inRomanian ?
-                "Acum urmează să schimbați statusul plății acestei comenzi. Vă rugăm să vă asigurați că primiți ${(totalPrice - advancePayment).toStringAsFixed(2)} RON de la client." :
-                  "You are now about to change the payment status of this order. Please make sure to receive ${(totalPrice - advancePayment).toStringAsFixed(2)} RON from the client.",
+                  staticVar.inRomanian
+                      ? "Acum urmează să schimbați statusul plății acestei comenzi. Vă rugăm să vă asigurați că primiți ${(totalPrice - advancePayment).toStringAsFixed(2)} RON de la client."
+                      : "You are now about to change the payment status of this order. Please make sure to receive ${(totalPrice - advancePayment).toStringAsFixed(2)} RON from the client.",
                   style: TextStyle(color: Colors.white)),
               actions: <Widget>[
                 TextButton(
@@ -1549,10 +1461,15 @@ class _ordersState extends State<orders> {
       builder: (BuildContext context) {
         return AlertDialog(
           backgroundColor: Colors.grey[850],
-          title: Text(staticVar.inRomanian ? "Nu se poate schimba statusul plății" :  'Can\'t change the payment status',
+          title: Text(
+              staticVar.inRomanian
+                  ? "Nu se poate schimba statusul plății"
+                  : 'Can\'t change the payment status',
               style: TextStyle(color: Colors.white)),
           content: Text(
-              staticVar.inRomanian ? "Comanda pe care ați ales-o este deja plătită, anulată sau finalizată." : "The order you chose is either already paid, canceled, or completed.",
+              staticVar.inRomanian
+                  ? "Comanda pe care ați ales-o este deja plătită, anulată sau finalizată."
+                  : "The order you chose is either already paid, canceled, or completed.",
               style: TextStyle(color: Colors.white)),
           actions: <Widget>[
             TextButton(
@@ -1627,7 +1544,7 @@ class _ordersState extends State<orders> {
                 style: TextStyle(color: Colors.white),
               ),
               content: Text(
-               staticVar.inRomanian ? mesaj :  message,
+                staticVar.inRomanian ? mesaj : message,
                 style: TextStyle(color: Colors.white),
               ),
               actions: <Widget>[
@@ -1657,7 +1574,9 @@ class _ordersState extends State<orders> {
               title:
                   Text('Payment Status', style: TextStyle(color: Colors.white)),
               content: Text(
-                  staticVar.inRomanian ? "Clientul a plătit ${totalPrice.toStringAsFixed(2)} RON. Sunteți sigur că doriți să continuați?" :  'The client has paid ${totalPrice.toStringAsFixed(2)} RON. Are you sure you want to proceed?',
+                  staticVar.inRomanian
+                      ? "Clientul a plătit ${totalPrice.toStringAsFixed(2)} RON. Sunteți sigur că doriți să continuați?"
+                      : 'The client has paid ${totalPrice.toStringAsFixed(2)} RON. Are you sure you want to proceed?',
                   style: TextStyle(color: Colors.white)),
               actions: <Widget>[
                 TextButton(
@@ -1693,9 +1612,9 @@ class _ordersState extends State<orders> {
               title:
                   Text('Payment Status', style: TextStyle(color: Colors.white)),
               content: Text(
-                  staticVar.inRomanian ?
-                  "Clientul v-a dat un avans de ${advancePayment} RON. Sunteți sigur că doriți să continuați?"
-                      :'The client gave you and advance payment  ${advancePayment} RON. Are you sure you want to proceed?',
+                  staticVar.inRomanian
+                      ? "Clientul v-a dat un avans de ${advancePayment} RON. Sunteți sigur că doriți să continuați?"
+                      : 'The client gave you and advance payment  ${advancePayment} RON. Are you sure you want to proceed?',
                   style: TextStyle(color: Colors.white)),
               actions: <Widget>[
                 TextButton(
@@ -1725,8 +1644,12 @@ class _ordersState extends State<orders> {
           context: context,
           builder: (BuildContext context) {
             return AlertDialog(
-              title: Text(staticVar.inRomanian ?  "Avertisment de anulare": 'Cancellation Warning'),
-              content: Text(staticVar.inRomanian ? "Sunteți sigur că doriți să anulați această comandă?" : 'Are you sure you want to cancel this order ? '),
+              title: Text(staticVar.inRomanian
+                  ? "Avertisment de anulare"
+                  : 'Cancellation Warning'),
+              content: Text(staticVar.inRomanian
+                  ? "Sunteți sigur că doriți să anulați această comandă?"
+                  : 'Are you sure you want to cancel this order ? '),
               actions: <Widget>[
                 TextButton(
                   child: Text('Go back'),
@@ -1792,16 +1715,17 @@ class _ordersState extends State<orders> {
       this.isLoading = true;
       setState(() {});
 
-
       /// Check if the advance payement is less than the total price after disocunt
-      double advancePayment = this.priceSummryDetails["advancePayment"] ;
-      double totalWithVat = double.tryParse(priceSummryDetails["totalWithVat"] ?? "0.0") ?? 0.0;
-      if(advancePayment >= totalWithVat){
-         MyDialog.showAlert(context, "OK", "Avansul dumneavoastră este mai mare decât prețul total.");
-        this.advancedPayment = 0.0 ;
-        this.discount = 0 ;
-          setState(() {});
-        return ;
+      double advancePayment = this.priceSummryDetails["advancePayment"];
+      double totalWithVat =
+          double.tryParse(priceSummryDetails["totalWithVat"] ?? "0.0") ?? 0.0;
+      if (advancePayment >= totalWithVat) {
+        MyDialog.showAlert(context, "OK",
+            "Avansul dumneavoastră este mai mare decât prețul total.");
+        this.advancedPayment = 0.0;
+        this.discount = 0;
+        setState(() {});
+        return;
       }
 
       /// check the mandetory inputs
@@ -1927,7 +1851,8 @@ class _ordersState extends State<orders> {
         'dealerName': this.dealerName,
         'dealerID': this.dealerID,
         'dealerMode': this.dealerMode,
-        'specifecEmployeeMode': this.specifecEmployeeMode
+        'specifecEmployeeMode': this.specifecEmployeeMode ,
+        'employeePaymentStatus' : false
       };
 
       final FirebaseFirestore firestore = FirebaseFirestore.instance;
@@ -1937,6 +1862,7 @@ class _ordersState extends State<orders> {
       ordersFromFirrbase();
       this.isLoading = false;
       this.addNewOrderMode = false;
+      resetVars();
       setState(() {});
 
       /// test the data before send
@@ -2109,33 +2035,82 @@ class _ordersState extends State<orders> {
     List<Map<String, dynamic>> ordersList = [];
 
     try {
-      // Get all documents from the 'services' collection
-      QuerySnapshot querySnapshot = await firestore
+      FirebaseFirestore firestore = FirebaseFirestore.instance;
+      firestore
           .collection('orders')
           .orderBy('issuedDate', descending: true)
-          .get();
+          .snapshots()
+          .listen((querySnapshot) {
+        List<orderModel> ordersHeper = [];
 
-      // Loop through the documents snapshot
-      querySnapshot.docs.forEach((doc) {
-        // Get document data
-        Map<String, dynamic> data = doc.data() as Map<String, dynamic>;
+        /// Ok the reason why i created this list is get copy of the orders so when i want to show certain order details I'll filter them
+        /// by doc ID
+        List<Map<String, dynamic>> ordersHelperListTOShowDetailsFromFirebase =
+            [];
+        for (var doc in querySnapshot.docs) {
+          Map<String, dynamic> data = doc.data() as Map<String, dynamic>;
+          data["docId"] = doc.id;
+          orderModel order = orderModel(
+            docId: doc.id,
+            carModel: data['carModel'] ?? '',
+            orderIssueDate: data['issuedDate'].toDate() ?? '',
+            orderStatus: data['status'] ?? '',
+            paymentStatus: data['paymentStatus'] ?? '',
+            employeePaymentStatus: data['employeePaymentStatus'] ?? false,
+            employeeWhoWashIt: data['empName'] ?? '',
+            orderSchedule: data['appointmentDate'].toDate() ?? '',
+          );
 
-        // Add document ID to the data map
-        data['docId'] = doc.id;
+          ordersHeper.add(order);
+          ordersHelperListTOShowDetailsFromFirebase.add(data);
+        }
+        ordersListTodisplay = ordersHeper;
+        ordersDataSources = ordersDataSource(orders: ordersListTodisplay);
+        ordersHelperListTOShowDetails =
+            ordersHelperListTOShowDetailsFromFirebase;
 
-        // Add data map to the list
-        ordersList.add(data);
+        setState(() {});
+
       });
 
-      this.ordersfromFirebase = ordersList;
-      // print(this.ordersfromFirebase);
-      this.isLoading = false;
-      setState(() {});
-      //print(this.employeefromFirebase);
+
     } catch (e) {
       // Print any errors for debugging purposes
       print('Error fetching : $e');
       MyDialog.showAlert(context, "Ok", 'Error fetching orders: $e');
     }
   }
+
+
+  void resetVars() {
+    clientName = '';
+    clientEmail = '';
+    clientPhone = '';
+    carModel = '';
+    entranceDate = null;
+    appointmentDate = DateTime.now().add(Duration(days: 1));
+    finishedDate = null;
+    this.status = orderStatus.pending;
+    paymentStatus = PaymentStatus.init;
+    paymentMethod = PaymentMethod.init;
+    cui = '';
+    selectedServices = [];
+    priceSummryDetails = {};
+    advancedPayment = 0.0;
+    discount = 0;
+    servicesPounce = '';
+    imageBefore = '';
+    imageAfter = '';
+    lock = false;
+    empId = '';
+    empName = '';
+    empAcceptanceTimestamp = null;
+    completionTimestamp = null;
+    billUrl = '';
+    dealerName = '';
+    dealerID = '';
+    dealerMode = false ;
+    specifecEmployeeMode = false;
+  }
+
 }

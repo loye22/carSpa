@@ -219,8 +219,6 @@ class staticVar {
     }
   }
 
-
-
   /// this function will return small container represnt the payment status
   static Widget getPaymentStatusWidget({required String status2}) {
     Color statusColor;
@@ -347,7 +345,7 @@ class staticVar {
     return statusColor;
   }
 
-  // this function will return small container represnt the emplyee paument status
+  /// this function will return small container represnt the emplyee paument status
   static Widget empPaymentStatus({required bool status2 }) {
     Color statusColor;
     String statusText;
@@ -374,7 +372,10 @@ class staticVar {
 
 
 
-/// this is to deal with events colors
+
+
+
+  /// this is to deal with events colors
   static final List<Color> colors = [
     Colors.blue,
     Colors.red,

@@ -1,7 +1,9 @@
 import 'dart:async';
 import 'package:car_spa/models/orderModels.dart';
 import 'package:car_spa/widgets/CustomDateTimePicker.dart';
+import 'package:car_spa/widgets/EmployeeNameCard.dart';
 import 'package:car_spa/widgets/PriceSummaryCard.dart';
+import 'package:car_spa/widgets/button.dart';
 import 'package:car_spa/widgets/customTextFieldWidget.dart';
 import 'package:car_spa/widgets/dialog.dart';
 import 'package:car_spa/widgets/enum.dart';
@@ -14,6 +16,7 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_animate/flutter_animate.dart';
+import 'package:intl/intl.dart';
 
 import 'package:multi_dropdown/multiselect_dropdown.dart';
 import 'dart:convert' as json;
@@ -36,6 +39,7 @@ class _ordersState extends State<orders> {
 
   // DateTime issuedDate = DateTime.now();
   DateTime? entranceDate = null;
+  String? _errorMessage;
 
   DateTime appointmentDate = DateTime.now().add(Duration(days: 1));
   DateTime? finishedDate = null;
@@ -73,6 +77,7 @@ class _ordersState extends State<orders> {
   String dealerName = '';
   String dealerID = '';
   bool dealerMode = false;
+  bool payingEmpMOde = false;
 
   /// when this mode is ON only the assiened employee will be able to accept the order
   bool specifecEmployeeMode = false;
@@ -93,6 +98,7 @@ class _ordersState extends State<orders> {
   List<orderModel> ordersListTodisplay = [];
   late ordersDataSource ordersDataSources;
   List<Map<String, dynamic>> ordersHelperListTOShowDetails = [];
+  final DataGridController _dataGridController = DataGridController();
 
   @override
   void initState() {
@@ -1073,184 +1079,548 @@ class _ordersState extends State<orders> {
                 // this part will show all the oders
                 (showOrderDetailsMode
                     ? orderDetails(data: orderDataToDisplay)
-                    : Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                        children: [
-                          Text(
-                            "Orders tabel ",
-                            style: TextStyle(fontSize: 24),
-                          ),
-                          Padding(
-                            padding: const EdgeInsets.all(8.0),
-                            child: Container(
-                              height: staticVar.fullhigth(context) * .85,
-                              decoration: BoxDecoration(
-                                  borderRadius: BorderRadius.circular(30),
-                                  border:
-                                      Border.all(color: Colors.grey, width: 1)),
-                              clipBehavior: Clip.hardEdge,
-                              child: SfDataGrid(
-                                showCheckboxColumn: true,
-                                // showColumnHeaderIconOnHover: true,
-                                onCellTap: (details) {
-                                  int selectedRowIndex =
-                                      details.rowColumnIndex.rowIndex - 1;
+                    : SingleChildScrollView(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                          children: [
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                cardName(name: "Tabelul comenzilor"),
+                                Button(onTap: () {
+                                  _dataGridController.selectedIndex = -1;
+                                }, text: "text"),
+                                Column(
+                                  children: [
+                                    Padding(
+                                      padding: const EdgeInsets.only(top: 8.0),
+                                      child: FilledButton.icon(
+                                        onPressed: customFilter1,
+                                        style: ButtonStyle(
+                                          backgroundColor:
+                                              MaterialStateProperty.all(Color(
+                                                  0xFF3498DB)), // Blue color for example
+                                        ),
+                                        icon: const Icon(Icons.filter_1,
+                                            color: Colors.white),
+                                        // Icon representing 1-15 range
+                                        label: const Text(
+                                            '         1 - 15          ',
+                                            style:
+                                                TextStyle(color: Colors.white)),
+                                      ),
+                                    ),
 
-                                  /// now we want to extract the the row docID,after that we will use it to extract the whole document data from the list
-                                  var row = ordersDataSources.effectiveRows
-                                      .elementAt(selectedRowIndex);
+                                    // Button for filtering from 16th to end of month
+                                    Padding(
+                                      padding: const EdgeInsets.only(top: 8.0),
+                                      child: FilledButton.icon(
+                                        onPressed: customFilter2,
+                                        style: ButtonStyle(
+                                          backgroundColor:
+                                              MaterialStateProperty.all(Color(
+                                                  0xFFE74C3C)), // Red color for example
+                                        ),
+                                        icon: const Icon(
+                                            Icons.filter_2_outlined,
+                                            color: Colors.white),
+                                        // Icon representing 16-end range
+                                        label: const Text(
+                                            '         16 - END      ',
+                                            style:
+                                                TextStyle(color: Colors.white)),
+                                      ),
+                                    ),
+                                    payingEmpMOde
+                                        ? Padding(
+                                            padding:
+                                                const EdgeInsets.only(top: 8.0),
+                                            child: Animate(
+                                              effects: [
+                                                SlideEffect(
+                                                    begin: Offset(1, 0),
+                                                    duration: Duration(
+                                                        milliseconds: 250))
+                                              ],
+                                              child: FilledButton.icon(
+                                                onPressed: employeePayment,
+                                                style: ButtonStyle(
+                                                  backgroundColor:
+                                                      MaterialStateProperty.all(
+                                                          Color(
+                                                              0xFF2ECC71)), // Green color for payment
+                                                ),
+                                                icon: const Icon(Icons.payment,
+                                                    color: Colors.white),
+                                                // Payment icon
+                                                label: const Text(
+                                                    'Handle Payment',
+                                                    style: TextStyle(
+                                                        color: Colors.white)),
+                                              ),
+                                            ),
+                                          )
+                                        : Padding(
+                                            padding: EdgeInsets.all(16.0),
+                                            child: SizedBox.shrink(),
+                                          )
 
-                                  /// The doc id extraction
-                                  String docID =
-                                      row.getCells()[7].value.toString();
-                                  // print(docID);
-                                  /// fetch the order with exact doc id
-                                  Map<String, dynamic> e = this
-                                      .ordersHelperListTOShowDetails
-                                      .firstWhere((e) => e["docId"] == docID);
-                                  this.orderDataToDisplay = e ?? {};
-                                  this.showOrderDetailsMode = true;
-                                  setState(() {});
+                                    /// handel the employee payment featcher
+                                    /// this button gonna pay the selected orders for the assiended employee
+                                  ],
+                                ),
+                              ],
+                            ),
+                            Padding(
+                              padding: const EdgeInsets.all(8.0),
+                              child: Container(
+                                height: staticVar.fullhigth(context) * .85,
+                                decoration: BoxDecoration(
+                                    borderRadius: BorderRadius.circular(30),
+                                    border: Border.all(
+                                        color: Colors.grey, width: 1)),
+                                clipBehavior: Clip.hardEdge,
+                                child: SfDataGrid(
+                                  onSelectionChanged:
+                                      (List<DataGridRow> addedRows,
+                                          List<DataGridRow> removedRows) {
+                                    var _selectedRows =
+                                        _dataGridController.selectedRows.length;
+                                    if (_selectedRows != 0) {
+                                      this.payingEmpMOde = true;
+                                      setState(() {});
+                                    } else {
+                                      this.payingEmpMOde = false;
+                                      setState(() {});
+                                    }
+                                  },
+                                  controller: _dataGridController,
+                                  checkboxColumnSettings:
+                                      DataGridCheckboxColumnSettings(),
+                                  showCheckboxColumn: true,
+                                  selectionMode: SelectionMode.multiple,
+                                  // showColumnHeaderIconOnHover: true,
+                                  onCellTap: (details) {
+                                    int selectedRowIndex =
+                                        details.rowColumnIndex.rowIndex - 1;
 
-                                  //  print(row.getCells()[9].value);
+                                    /// now we want to extract the the row docID,after that we will use it to extract the whole document data from the list
+                                    var row = ordersDataSources.effectiveRows
+                                        .elementAt(selectedRowIndex);
 
-                                  // showInvoiceDetails(
-                                  //     context, row.getCells()[9].value);
-                                },
-                                columnWidthMode: ColumnWidthMode.fill,
-                                // headerRowHeight: ,
-                                allowSorting: true,
-                                allowFiltering: true,
-                                source: ordersDataSources,
-                                columns: <GridColumn>[
-                                  GridColumn(
-                                      columnName: 'carModel',
-                                      label: Container(
-                                          alignment: Alignment.centerRight,
-                                          child: Text(
-                                            'Model de mașină',
-                                          ))),
-                                  GridColumn(
-                                      columnName: 'paymentStatus',
-                                      label: Container(
-                                          alignment: Alignment.centerRight,
-                                          child: Text('Stare plată'))),
-                                  GridColumn(
-                                      columnName: 'orderStatus',
-                                      label: Container(
-                                          alignment: Alignment.centerRight,
-                                          child: Text('Stare comandă'))),
-                                  GridColumn(
-                                      columnName: 'orderSchedule',
-                                      label: Container(
-                                          alignment: Alignment.centerRight,
-                                          child: Text('Programare comandă'))),
-                                  GridColumn(
-                                      columnName: 'orderIssueDate',
-                                      label: Container(
-                                          alignment: Alignment.centerRight,
-                                          child: Text('Data emiterii comenzii'))),
-                                  GridColumn(
-                                      columnName: 'employeeWhoWashIt',
-                                      label: Container(
-                                          alignment: Alignment.centerRight,
-                                          child: Text('Atribuit lui'))),
-                                  GridColumn(
-                                      columnName: 'employeePaymentStatus',
-                                      label: Container(
-                                          alignment: Alignment.centerRight,
-                                          child:
-                                              Text('Stare plată angajat'))),
-                                  GridColumn(
-                                      columnName: 'DBID',
-                                      label: Container(
-                                          alignment: Alignment.centerRight,
-                                          child: Text('DBID'))),
-                                ],
+                                    /// The doc id extraction
+                                    String docID =
+                                        row.getCells()[7].value.toString();
+                                    // print(docID);
+                                    /// fetch the order with exact doc id
+                                    Map<String, dynamic> e = this
+                                        .ordersHelperListTOShowDetails
+                                        .firstWhere((e) => e["docId"] == docID);
+                                    this.orderDataToDisplay = e ?? {};
+                                    this.showOrderDetailsMode = true;
+                                    setState(() {});
+
+                                    //  print(row.getCells()[9].value);
+
+                                    // showInvoiceDetails(
+                                    //     context, row.getCells()[9].value);
+                                  },
+                                  columnWidthMode: ColumnWidthMode.fill,
+                                  // headerRowHeight: ,
+                                  allowSorting: true,
+                                  allowFiltering: true,
+                                  source: ordersDataSources,
+                                  columns: <GridColumn>[
+                                    GridColumn(
+                                        columnName: 'carModel',
+                                        label: Container(
+                                            alignment: Alignment.centerRight,
+                                            child: Text(
+                                              'Model de mașină',
+                                            ))),
+                                    GridColumn(
+                                        columnName: 'paymentStatus',
+                                        label: Container(
+                                            alignment: Alignment.centerRight,
+                                            child: Text('Stare plată'))),
+                                    GridColumn(
+                                        columnName: 'orderStatus',
+                                        label: Container(
+                                            alignment: Alignment.centerRight,
+                                            child: Text('Stare comandă'))),
+                                    GridColumn(
+                                        columnName: 'orderSchedule',
+                                        label: Container(
+                                            alignment: Alignment.centerRight,
+                                            child: Text('Programare comandă'))),
+                                    GridColumn(
+                                        columnName: 'orderIssueDate',
+                                        label: Container(
+                                            alignment: Alignment.centerRight,
+                                            child: Text(
+                                                'Data emiterii comenzii'))),
+                                    GridColumn(
+                                        columnName: 'employeeWhoWashIt',
+                                        label: Container(
+                                            alignment: Alignment.centerRight,
+                                            child: Text('Atribuit lui'))),
+                                    GridColumn(
+                                        columnName: 'employeePaymentStatus',
+                                        label: Container(
+                                            alignment: Alignment.centerRight,
+                                            child:
+                                                Text('Stare plată angajat'))),
+                                    GridColumn(
+                                        columnName: 'DBID',
+                                        label: Container(
+                                            alignment: Alignment.centerRight,
+                                            child: Text('DBID'))),
+                                  ],
+                                ),
                               ),
                             ),
-                          ),
-                        ],
-                      ))
-
-
-
-            ));
+                          ],
+                        ),
+                      ))));
   }
 
-  /// these has been replaced by dateCalnderPickUp() widget the i have created
-  /// I'll leve it here just in case ^^
-  // /// this function gonna handel filter by date range event
-  // ///
-  // void showCalender() async {
-  //   await showDateRangePickerDialog(
-  //       offset: Offset(staticVar.fullWidth(context) * .35,
-  //           staticVar.fullhigth(context) * .12),
-  //       context: context,
-  //       builder: datePickerBuilder);
-  // }
-  //
-  // Widget datePickerBuilder(BuildContext context,
-  //         dynamic Function(DateRange) onDateRangeChanged) =>
-  //     Animate(
-  //       effects: [FadeEffect()],
-  //       child: DateRangePickerWidget(
-  //         theme: CalendarTheme(
-  //           selectedColor: Color(0xFF1abc9c),
-  //           // Color for selected dates
-  //           inRangeColor: Color(0xFF2c3e50),
-  //           // Color for dates within range
-  //           inRangeTextStyle: TextStyle(color: Colors.white),
-  //           // Text style for dates within range
-  //           selectedTextStyle: TextStyle(color: Colors.white),
-  //           // Text style for selected dates
-  //           todayTextStyle: TextStyle(color: Colors.black),
-  //           // Text style for today's date
-  //           defaultTextStyle: TextStyle(color: Colors.black),
-  //           // Default text style for other dates
-  //           disabledTextStyle: TextStyle(color: Colors.grey),
-  //           // Text style for disabled dates
-  //           radius: 50,
-  //           // Radius of each calendar tile
-  //           tileSize: 50, // Size of each calendar tile
-  //         ),
-  //         doubleMonth: true,
-  //         initialDateRange: DateRange(DateTime.now(), DateTime(2030)),
-  //         onDateRangeChanged: (selctedDateRange) {
-  //           this.startDateRangeFilter = selctedDateRange?.start;
-  //           this.endDateRangeFilter = selctedDateRange?.end;
-  //           if (this.startDateRangeFilter == null ||
-  //               this.endDateRangeFilter == null)
-  //             throw Exception("Error while selecting the date range");
-  //           this.dateFilterMode = true;
-  //
-  //           ///
-  //           this.filterdOrders = filterByDateRange(
-  //               orders: this.ordersfromFirebase,
-  //               startDate: this.startDateRangeFilter ?? DateTime(3000),
-  //               endDate: this.endDateRangeFilter ?? DateTime(3000));
-  //           this.dateFilterMode = true;
-  //
-  //           setState(() {});
-  //         },
-  //         height: staticVar.fullhigth(context) * .45,
-  //       ),
-  //     );
-  //
-  // /// this function gonna handel the filter by date range
-  // List<Map<String, dynamic>> filterByDateRange(
-  //     {required List<Map<String, dynamic>> orders,
-  //     required DateTime startDate,
-  //     required DateTime endDate}) {
-  //   return orders.where((order) {
-  //     DateTime appointmentDate = order['issuedDate'].toDate();
-  //     bool isWithinDateRange = appointmentDate.isAfter(startDate) &&
-  //         appointmentDate.isBefore(endDate.add(Duration(days: 1)));
-  //
-  //     return isWithinDateRange;
-  //   }).toList();
-  // }
+  /// This function gonna change the employee payment status for certain orders
+  void employeePayment() {
+    /// The algo will be like this
+    /// 1. Get all the selected orders
+    /// 2. check if all the orders are for the same employee if not show proper msg and return.
+    /// 3.
+    try {
+      List<Map<String, dynamic>> ordersToPay = [];
+      // Get the empId of the first order
+      if (_dataGridController.selectedRows.length == 0) return;
+
+      for (int i = 0; i < _dataGridController.selectedRows.length; i++) {
+        String _selectedRowID =
+            _dataGridController.selectedRows[i].getCells()[7].value;
+
+        Map<String, dynamic> order = ordersHelperListTOShowDetails
+            .firstWhere((e) => e["docId"] == _selectedRowID);
+        ordersToPay.add(order);
+
+
+
+        // print(_selectedRowID.length);
+        // print(_selectedRowID);
+        // print(ordersHelperListTOShowDetails.first);
+      }
+
+      List<String> ordersToPayID =
+          ordersToPay.map((e) => e["docId"]?.toString() ?? "").toList();
+      print(ordersToPayID);
+
+      /// Get the empId of the first order
+      String firstEmpId = ordersToPay?[0]?['empId'] ?? "NotFOund";
+      String empName = ordersToPay?[0]?["empName"] ?? "Notfound";
+
+      /// If the filtered list is empty, all orders are for the same employee
+      bool differentEmpOrders =
+          ordersToPay.where((order) => order['empId'] != firstEmpId).isEmpty;
+
+      /// in case the user selected orders are not for the same emplyee in this case we cant proceed the payment
+      if (!differentEmpOrders) {
+        MyDialog.showAlert(context, "Ok",
+            "Pentru a efectua plata, toate comenzile trebuie să aibă același angajat. Vă rugăm să vă asigurați că toate comenzile au același angajat și să încercați din nou ");
+        return;
+      }
+
+      showEmployeeProfitDialog(context, empName, ordersToPay, ordersToPayID);
+
+
+    } catch (e) {
+      print(e);
+      MyDialog.showAlert(context, "OK", "Error: $e");
+    }
+    finally{
+      _dataGridController.selectedIndex = -1;
+      payingEmpMOde = false  ;
+      setState(() {});
+    }
+  }
+
+  /// This function gonna show all the orders for certain employee  and calculate there percentage
+  void showEmployeeProfitDialog(BuildContext context, String employeeName,
+      List<Map<String, dynamic>> orders, List<String> ordersToPayID) {
+    try {
+      double totalProfit = 0.0;
+      double earnings = 0.0;
+
+      // Calculate total profit
+      for (var order in orders) {
+        var priceSummary = order['priceSummryDetails'];
+        if (priceSummary != null && priceSummary['totalPrice'] != null) {
+          totalProfit +=
+              double.tryParse(priceSummary['totalPrice'].toString()) ?? 0.0;
+        }
+      }
+
+      TextEditingController percentageController = TextEditingController();
+
+      /// Extraction the curret date filter
+      String From = "";
+      String To = "";
+      var filteredEntries = ordersDataSources.filterConditions.entries
+          .where((entry) => entry.key == "orderIssueDate");
+      for (var i in filteredEntries) {
+        From = DateFormat('dd-MM-yyyy').format(i.value[0].value as DateTime);
+        To = DateFormat('dd-MM-yyyy').format(i.value[1].value as DateTime);
+      }
+      showDialog(
+        context: context,
+        builder: (context) {
+          return StatefulBuilder(
+            builder: (context, setState) {
+
+              return AlertDialog(
+                title: Text(employeeName,
+                    style:
+                    TextStyle(fontWeight: FontWeight.bold, fontSize: 20)),
+                content: SingleChildScrollView(
+                  child: SizedBox(
+                    width: staticVar.fullWidth(context) * .5,
+                    child: Column(
+                      mainAxisSize: MainAxisSize.max,
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        for (var order in orders) ...[
+                          Text("${order['carModel'] ?? 'Unknown Car'}",
+                              style: TextStyle(
+                                  fontWeight: FontWeight.bold, fontSize: 18)),
+                          for (var service in order['selectedServices'] ?? [])
+                            ListTile(
+                              title: Text(
+                                  service['serviceName'] ?? 'Unknown Service'),
+                              subtitle: Text(
+                                  "Price: ${service['price'] ?? '0.00'} RON"),
+                            ),
+                          Divider(),
+                        ],
+                        Text("De la: $From"),
+                        Text("La: $To"),
+                        Text("Total Mașini Servite: ${orders.length}"),
+                        Text(
+                            "Total Profituri: ${totalProfit.toStringAsFixed(2)} RON"),
+                        SizedBox(height: 20),
+                        TextField(
+                          controller: percentageController,
+                          decoration: InputDecoration(
+                            errorText: _errorMessage,
+                            labelText: "Enter Percentage",
+                            border: OutlineInputBorder(),
+                          ),
+                          keyboardType: TextInputType.number,
+                          onChanged: (value) {
+                            print(percentageController.text);
+                            _validateInput(value);
+                            // Update earnings whenever the percentage changes
+                            double percentage = double.tryParse(value) ?? 0.0;
+                            earnings = (percentage / 100) * totalProfit;
+                            setState(() {});
+                          },
+                        ),
+                        SizedBox(height: 20),
+                        Text("$employeeName va lua: RON ${earnings.toStringAsFixed(2)}",
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+                actions: _errorMessage != null
+                    ? []
+                    : [
+                  TextButton(
+                    onPressed: () async{
+                      try  {
+                        // Handle proceed logic
+                        /// 1. On proceed the function will update the employeePaymentStatus for all of the selected orders
+                        /// according to the docs ID
+                        /// 2. After we gonna insert the payment details in payments table as this
+                        /// payment date : ......
+                        /// payment amount : ......
+                        /// payment percentage : ......
+                        /// to whom : .......
+                        /// paidBy: ........
+
+                        /// if emplyee cut is 0.0 return
+                        if (earnings == 0.0) {
+                          MyDialog.showAlert(context, "Ok",
+                              "Vă rugăm să vă asigurați că veniturile angajatului sunt mai mari de 0 RON");
+                          return;
+                        }
+
+
+                        _errorMessage = "";
+                        setState((){});
+                        // Updating the employeePaymentStatus for these orders
+                        final firestore = FirebaseFirestore.instance;
+                        // Iterate through the order IDs
+                        for (String orderId in ordersToPayID) {
+                          print(orderId);
+                        //  Reference to the specific order document
+                          DocumentReference orderRef =
+                          firestore.collection('orders').doc(orderId);
+                          // Update the employeePaymentStatus and add the payment details
+                          await orderRef.update({
+                            'employeePaymentStatus': true,
+                          });
+                          print('Order $orderId updated successfully.');
+                        }
+
+                        // User? user =
+                        // await FirebaseAuth.instance.currentUser;
+                        //
+                        // // Log the payment details into the 'payments' collection
+                        // await firestore.collection('payments').add({
+                        //   'allOrdersDetails': orders,
+                        //   'ordersID':
+                        //   ordersToPayID, // Reference to the order
+                        //   'paidBy': user?.email ?? "notfounf",
+                        //   'toWhom': employeeName,
+                        //   'paymentPercentage': percentageController?.text ?? "notfound",
+                        //   'paymentDate': DateTime.now(),
+                        //   'paymentAmountToEmployee': earnings,
+                        //   'TotalPro': totalProfit,
+                        //   'ordersDateFrom': From,
+                        //   'ordersDateTo': To
+                        // });
+
+
+
+
+
+
+                        Navigator.of(context).pop();
+                      }
+                      catch(e){}
+
+                    },
+                    child: Text("Proceed"),
+                  ),
+                  TextButton(
+                    onPressed: () {
+                      Navigator.of(context).pop();
+                    },
+                    child: Text("Cancel"),
+                  ),
+                ],
+              );
+
+
+            },
+          );
+        },
+      );
+    } catch (e) {
+      print(e);
+      MyDialog.showAlert(context, "Ok", "Error: $e ");
+    }
+  }
+
+  void _validateInput(String value) {
+    final intValue = int.tryParse(value);
+    if (intValue == null || intValue < 1 || intValue > 100) {
+      setState(() {
+        _errorMessage = "Te rog să introduci un număr între 1 și 100.";
+      });
+    } else {
+      setState(() {
+        _errorMessage = null; // Clear the error message if valid
+      });
+    }
+  }
+
+  /// helper function for showEmployeeProfitDialog()
+  double _calculateEarnings(String total, String percentage) {
+    if (percentage.isEmpty) return 0.0;
+    double totalValue = double.tryParse(total) ?? 0.0;
+    double perc = double.tryParse(percentage) ?? 0.0;
+    return totalValue * (perc / 100);
+  }
+
+  /// This function gonna filter the orders from 1st of current month unilt the 15th
+  void customFilter1() {
+    try {
+      // Handle logic for filtering from 1 to 15
+      /// SO this gonna filter gonna filter all the orders from the 1st of current month
+      /// and current year unilt the 15th of current month current year
+      /// /*  every thing between these /**/ are the current month so in production mode uncomment them the remove 09  */
+      DateTime now = DateTime.now();
+      ordersDataSources.clearFilters();
+      ordersDataSources.addFilter(
+          'orderIssueDate',
+          FilterCondition(
+            value: DateTime(now.year, /*now.month*/ 09, 1),
+            filterOperator: FilterOperator.and,
+            type: FilterType.greaterThanOrEqual,
+          ));
+      ordersDataSources.addFilter(
+          'orderIssueDate',
+          FilterCondition(
+            value: DateTime(now.year, /*now.month*/ 09, 15),
+            filterOperator: FilterOperator.and,
+            type: FilterType.lessThanOrEqual,
+          ));
+
+      ordersDataSources.addFilter(
+          'employeePaymentStatus',
+          FilterCondition(
+            value: false,
+            filterOperator: FilterOperator.and,
+            filterBehavior: FilterBehavior.stringDataType,
+            type: FilterType.equals,
+          ));
+    } catch (e) {
+      print(e);
+      MyDialog.showAlert(context, "Ok", "Error: $e");
+    }
+  }
+
+  /// This function gonna filter the orders from 16st of current month until the end of current month
+  void customFilter2() {
+    try {
+      // Handle logic for filtering from 16 to end
+      /// SO this gonna filter gonna filter all the orders from the 16th of current month
+      /// and current year unilt the END of current month current year
+      /// /*  every thing between these /**/ are the current month so in production mode uncomment them the remove 09  */
+      DateTime now = DateTime.now();
+      DateTime firstDayNextMonth = DateTime(now.year, /*now.month + 1*/ 10, 1);
+      DateTime lastDayOfMonth = firstDayNextMonth.subtract(Duration(days: 1));
+
+      ordersDataSources.clearFilters();
+      ordersDataSources.addFilter(
+          'orderIssueDate',
+          FilterCondition(
+            value: DateTime(now.year, /*now.month*/ 09, 16),
+            filterOperator: FilterOperator.and,
+            type: FilterType.greaterThanOrEqual,
+          ));
+      ordersDataSources.addFilter(
+          'orderIssueDate',
+          FilterCondition(
+            value: lastDayOfMonth,
+            filterOperator: FilterOperator.and,
+            type: FilterType.lessThanOrEqual,
+          ));
+
+      ordersDataSources.addFilter(
+          'employeePaymentStatus',
+          FilterCondition(
+            value: false,
+            filterOperator: FilterOperator.and,
+            filterBehavior: FilterBehavior.stringDataType,
+            type: FilterType.equals,
+          ));
+    } catch (e) {
+      print(e);
+      MyDialog.showAlert(context, "Ok", "Error: $e");
+    }
+  }
 
   /// this function gonna handel the filter by employee name
   List<Map<String, dynamic>> filterByEmployeeID(
@@ -1851,8 +2221,8 @@ class _ordersState extends State<orders> {
         'dealerName': this.dealerName,
         'dealerID': this.dealerID,
         'dealerMode': this.dealerMode,
-        'specifecEmployeeMode': this.specifecEmployeeMode ,
-        'employeePaymentStatus' : false
+        'specifecEmployeeMode': this.specifecEmployeeMode,
+        'employeePaymentStatus': false
       };
 
       final FirebaseFirestore firestore = FirebaseFirestore.instance;
@@ -2070,17 +2440,13 @@ class _ordersState extends State<orders> {
             ordersHelperListTOShowDetailsFromFirebase;
 
         setState(() {});
-
       });
-
-
     } catch (e) {
       // Print any errors for debugging purposes
       print('Error fetching : $e');
       MyDialog.showAlert(context, "Ok", 'Error fetching orders: $e');
     }
   }
-
 
   void resetVars() {
     clientName = '';
@@ -2109,8 +2475,7 @@ class _ordersState extends State<orders> {
     billUrl = '';
     dealerName = '';
     dealerID = '';
-    dealerMode = false ;
+    dealerMode = false;
     specifecEmployeeMode = false;
   }
-
 }

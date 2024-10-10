@@ -29,6 +29,7 @@ class _rootPageState extends State<rootPage> {
     _sideMenuController = SideMenuController();
     _sideMenuController.addListener((index) {
       _pageController.jumpToPage(index);
+
     });
     DateTime now = DateTime.now();
   }
@@ -93,6 +94,7 @@ class _rootPageState extends State<rootPage> {
             Animate(
               effects: [FadeEffect(duration: Duration(milliseconds: 700))],
               child: SideMenu(
+
                 style: SideMenuStyle(
                   decoration: BoxDecoration(
                     color: Color(0xFF2c3e50), // Sidebar background color
@@ -130,7 +132,9 @@ class _rootPageState extends State<rootPage> {
             ),
             Expanded(
                 child: PageView(
-              controller: _pageController,
+                  physics: const NeverScrollableScrollPhysics(), // Disable horizontal scroll gestures
+
+                  controller: _pageController,
               children: [
 
 

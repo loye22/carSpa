@@ -1175,109 +1175,233 @@ class _ordersState extends State<orders> {
                             Padding(
                               padding: const EdgeInsets.all(8.0),
                               child: Container(
+
                                 height: staticVar.fullhigth(context) * .85,
                                 decoration: BoxDecoration(
                                     borderRadius: BorderRadius.circular(30),
                                     border: Border.all(
                                         color: Colors.grey, width: 1)),
                                 clipBehavior: Clip.hardEdge,
-                                child: SfDataGrid(
-                                  onSelectionChanged:
-                                      (List<DataGridRow> addedRows,
-                                          List<DataGridRow> removedRows) {
-                                    var _selectedRows =
-                                        _dataGridController.selectedRows.length;
-                                    if (_selectedRows != 0) {
-                                      this.payingEmpMOde = true;
-                                      setState(() {});
-                                    } else {
-                                      this.payingEmpMOde = false;
-                                      setState(() {});
-                                    }
-                                  },
-                                  controller: _dataGridController,
-                                  checkboxColumnSettings:
-                                      DataGridCheckboxColumnSettings(),
-                                  showCheckboxColumn: true,
-                                  selectionMode: SelectionMode.multiple,
-                                  // showColumnHeaderIconOnHover: true,
-                                  onCellTap: (details) {
-                                    int selectedRowIndex =
-                                        details.rowColumnIndex.rowIndex - 1;
+                                child: SingleChildScrollView(
+                                  scrollDirection: Axis.horizontal,
+                                  child: SizedBox(
+                                    width: staticVar.golobalWidth(context) *.9,
+                                    child: SfDataGrid(
+                                      controller: _dataGridController,
+                                      showCheckboxColumn: true,
+                                      selectionMode: SelectionMode.multiple,
+                                      allowSorting: true,
+                                      allowFiltering: true,
+                                      columnWidthMode: ColumnWidthMode.none, // Disable auto-resizing
 
-                                    /// now we want to extract the the row docID,after that we will use it to extract the whole document data from the list
-                                    var row = ordersDataSources.effectiveRows
-                                        .elementAt(selectedRowIndex);
+                                      source: ordersDataSources,
+                                        onSelectionChanged:
+                                            (List<DataGridRow> addedRows,
+                                                List<DataGridRow> removedRows) {
+                                          var _selectedRows =
+                                              _dataGridController.selectedRows.length;
+                                          if (_selectedRows != 0) {
+                                            this.payingEmpMOde = true;
+                                            setState(() {});
+                                          } else {
+                                            this.payingEmpMOde = false;
+                                            setState(() {});
+                                          }
+                                        },
+                                        onCellTap: (details) {
+                                          int selectedRowIndex =
+                                              details.rowColumnIndex.rowIndex - 1;
 
-                                    /// The doc id extraction
-                                    String docID =
-                                        row.getCells()[7].value.toString();
-                                    // print(docID);
-                                    /// fetch the order with exact doc id
-                                    Map<String, dynamic> e = this
-                                        .ordersHelperListTOShowDetails
-                                        .firstWhere((e) => e["docId"] == docID);
-                                    this.orderDataToDisplay = e ?? {};
-                                    this.showOrderDetailsMode = true;
-                                    setState(() {});
+                                          /// now we want to extract the the row docID,after that we will use it to extract the whole document data from the list
+                                          var row = ordersDataSources.effectiveRows
+                                              .elementAt(selectedRowIndex);
 
-                                    //  print(row.getCells()[9].value);
+                                          /// The doc id extraction
+                                          String docID =
+                                              row.getCells()[7].value.toString();
+                                          // print(docID);
+                                          /// fetch the order with exact doc id
+                                          Map<String, dynamic> e = this
+                                              .ordersHelperListTOShowDetails
+                                              .firstWhere((e) => e["docId"] == docID);
+                                          this.orderDataToDisplay = e ?? {};
+                                          this.showOrderDetailsMode = true;
+                                          setState(() {});
 
-                                    // showInvoiceDetails(
-                                    //     context, row.getCells()[9].value);
-                                  },
-                                  columnWidthMode: ColumnWidthMode.fill,
-                                  // headerRowHeight: ,
-                                  allowSorting: true,
-                                  allowFiltering: true,
-                                  source: ordersDataSources,
-                                  columns: <GridColumn>[
-                                    GridColumn(
-                                        columnName: 'carModel',
-                                        label: Container(
+                                          //  print(row.getCells()[9].value);
+
+                                          // showInvoiceDetails(
+                                          //     context, row.getCells()[9].value);
+                                        },
+
+                                      columns: <GridColumn>[
+                                        GridColumn(
+                                          columnName: 'carModel',
+                                          width: 150, // Set a fixed width
+                                          label: Container(
                                             alignment: Alignment.centerRight,
-                                            child: Text(
-                                              'Model de mașină',
-                                            ))),
-                                    GridColumn(
-                                        columnName: 'paymentStatus',
-                                        label: Container(
+                                            child: Text('Model de mașină'),
+                                          ),
+                                        ),
+                                        GridColumn(
+                                          columnName: 'paymentStatus',
+                                          width: 150,
+                                          label: Container(
                                             alignment: Alignment.centerRight,
-                                            child: Text('Stare plată'))),
-                                    GridColumn(
-                                        columnName: 'orderStatus',
-                                        label: Container(
+                                            child: Text('Stare plată'),
+                                          ),
+                                        ),
+                                        GridColumn(
+                                          columnName: 'orderStatus',
+                                          width: 150,
+                                          label: Container(
                                             alignment: Alignment.centerRight,
-                                            child: Text('Stare comandă'))),
-                                    GridColumn(
-                                        columnName: 'orderSchedule',
-                                        label: Container(
+                                            child: Text('Stare comandă'),
+                                          ),
+                                        ),
+                                        GridColumn(
+                                          columnName: 'orderSchedule',
+                                          width: 180,
+                                          label: Container(
                                             alignment: Alignment.centerRight,
-                                            child: Text('Programare comandă'))),
-                                    GridColumn(
-                                        columnName: 'orderIssueDate',
-                                        label: Container(
+                                            child: Text('Programare comandă'),
+                                          ),
+                                        ),
+                                        GridColumn(
+                                          columnName: 'orderIssueDate',
+                                          width: 180,
+                                          label: Container(
                                             alignment: Alignment.centerRight,
-                                            child: Text(
-                                                'Data emiterii comenzii'))),
-                                    GridColumn(
-                                        columnName: 'employeeWhoWashIt',
-                                        label: Container(
+                                            child: Text('Data emiterii comenzii'),
+                                          ),
+                                        ),
+                                        GridColumn(
+                                          columnName: 'employeeWhoWashIt',
+                                          width: 180,
+                                          label: Container(
                                             alignment: Alignment.centerRight,
-                                            child: Text('Atribuit lui'))),
-                                    GridColumn(
-                                        columnName: 'employeePaymentStatus',
-                                        label: Container(
+                                            child: Text('Atribuit lui'),
+                                          ),
+                                        ),
+                                        GridColumn(
+                                          columnName: 'employeePaymentStatus',
+                                          width: 180,
+                                          label: Container(
                                             alignment: Alignment.centerRight,
-                                            child:
-                                                Text('Stare plată angajat'))),
-                                    GridColumn(
-                                        columnName: 'DBID',
-                                        label: Container(
+                                            child: Text('Stare plată angajat'),
+                                          ),
+                                        ),
+                                        GridColumn(
+                                          columnName: 'DBID',
+                                          width: 150,
+                                          label: Container(
                                             alignment: Alignment.centerRight,
-                                            child: Text('DBID'))),
-                                  ],
+                                            child: Text('DBID'),
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
                                 ),
+
+                                // SfDataGrid(
+                                //   onSelectionChanged:
+                                //       (List<DataGridRow> addedRows,
+                                //           List<DataGridRow> removedRows) {
+                                //     var _selectedRows =
+                                //         _dataGridController.selectedRows.length;
+                                //     if (_selectedRows != 0) {
+                                //       this.payingEmpMOde = true;
+                                //       setState(() {});
+                                //     } else {
+                                //       this.payingEmpMOde = false;
+                                //       setState(() {});
+                                //     }
+                                //   },
+                                //   controller: _dataGridController,
+                                //   checkboxColumnSettings:
+                                //       DataGridCheckboxColumnSettings(),
+                                //   showCheckboxColumn: true,
+                                //   selectionMode: SelectionMode.multiple,
+                                //   // showColumnHeaderIconOnHover: true,
+                                //   onCellTap: (details) {
+                                //     int selectedRowIndex =
+                                //         details.rowColumnIndex.rowIndex - 1;
+                                //
+                                //     /// now we want to extract the the row docID,after that we will use it to extract the whole document data from the list
+                                //     var row = ordersDataSources.effectiveRows
+                                //         .elementAt(selectedRowIndex);
+                                //
+                                //     /// The doc id extraction
+                                //     String docID =
+                                //         row.getCells()[7].value.toString();
+                                //     // print(docID);
+                                //     /// fetch the order with exact doc id
+                                //     Map<String, dynamic> e = this
+                                //         .ordersHelperListTOShowDetails
+                                //         .firstWhere((e) => e["docId"] == docID);
+                                //     this.orderDataToDisplay = e ?? {};
+                                //     this.showOrderDetailsMode = true;
+                                //     setState(() {});
+                                //
+                                //     //  print(row.getCells()[9].value);
+                                //
+                                //     // showInvoiceDetails(
+                                //     //     context, row.getCells()[9].value);
+                                //   },
+                                //   columnWidthMode: ColumnWidthMode.fill,
+                                //   // headerRowHeight: ,
+                                //   allowSorting: true,
+                                //   allowFiltering: true,
+                                //   source: ordersDataSources,
+                                //
+                                //   columns: <GridColumn>[
+                                //     GridColumn(
+                                //         columnName: 'carModel',
+                                //         label: Container(
+                                //             alignment: Alignment.centerRight,
+                                //             child: Text(
+                                //               'Model de mașină',
+                                //             ))),
+                                //     GridColumn(
+                                //         columnName: 'paymentStatus',
+                                //         label: Container(
+                                //             alignment: Alignment.centerRight,
+                                //             child: Text('Stare plată'))),
+                                //     GridColumn(
+                                //         columnName: 'orderStatus',
+                                //         label: Container(
+                                //             alignment: Alignment.centerRight,
+                                //             child: Text('Stare comandă'))),
+                                //     GridColumn(
+                                //         columnName: 'orderSchedule',
+                                //         label: Container(
+                                //             alignment: Alignment.centerRight,
+                                //             child: Text('Programare comandă'))),
+                                //     GridColumn(
+                                //         columnName: 'orderIssueDate',
+                                //         label: Container(
+                                //             alignment: Alignment.centerRight,
+                                //             child: Text(
+                                //                 'Data emiterii comenzii'))),
+                                //     GridColumn(
+                                //         columnName: 'employeeWhoWashIt',
+                                //         label: Container(
+                                //             alignment: Alignment.centerRight,
+                                //             child: Text('Atribuit lui'))),
+                                //     GridColumn(
+                                //         columnName: 'employeePaymentStatus',
+                                //         label: Container(
+                                //             alignment: Alignment.centerRight,
+                                //             child:
+                                //                 Text('Stare plată angajat'))),
+                                //     GridColumn(
+                                //         columnName: 'DBID',
+                                //         label: Container(
+                                //             alignment: Alignment.centerRight,
+                                //             child: Text('DBID'))),
+                                //   ],
+                                // ),
                               ),
                             ),
                           ],
